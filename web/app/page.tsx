@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SearchBox } from "@/components/search-box";
 
 export default function HomePage() {
   return (
@@ -30,9 +31,8 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-dashed border-border p-8 text-muted-foreground text-sm">
-            <span className="font-mono">{`<SearchBox />`}</span>
-            <div className="mt-2 text-xs">Step #6 sẽ wire vào /api/search</div>
+          <div className="text-left">
+            <SearchBox />
           </div>
 
           <div className="text-xs text-muted-foreground">

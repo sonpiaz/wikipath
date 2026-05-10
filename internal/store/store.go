@@ -51,8 +51,11 @@ type SearchResult struct {
 	Q         string       `json:"q"`
 }
 
-// vnNormalize: lowercase + strip diacritics + đ→d
-const normalizeExpr = "LOWER(REPLACE(REPLACE(strip_accents(birth_name), 'đ', 'd'), 'Đ', 'd'))"
+// vnNormalize: lowercase + strip diacritics + đ→d.
+// Apply to a column expression like `birth_name` or `n.name`.
+func normalizeExpr(col string) string {
+	return fmt.Sprintf("LOWER(REPLACE(REPLACE(strip_accents(%s), 'đ', 'd'), 'Đ', 'd'))", col)
+}
 
 func vnNormalize(s string) string {
 	// Mirror SQL's normalization on the input side.
@@ -92,29 +95,49 @@ func (s *Store) Search(ctx context.Context, q string, limit int) (*SearchResult,
 	}
 	qn := vnNormalize(strings.TrimSpace(q))
 
+	var sqlQ string
 	args := []any{}
-	where := "1=1"
-	if qn != "" {
-		where = fmt.Sprintf("%s LIKE '%%' || ? || '%%'", normalizeExpr)
-		args = append(args, qn)
+	if qn == "" {
+		// No query: just list everyone, ordered by quality.
+		sqlQ = `
+			SELECT id::VARCHAR, wikidata_qid, birth_name,
+			       birth_date_y, death_date_y,
+			       birth_place, bio_short,
+			       era, dynasty, current_family_name, lineage_branch,
+			       trust_score, primary_source
+			FROM person
+			ORDER BY
+			    (wikidata_qid IS NOT NULL) DESC,
+			    trust_score DESC,
+			    birth_date_y NULLS LAST,
+			    birth_name
+			LIMIT ?
+		`
+		args = append(args, limit)
+	} else {
+		// Match against birth_name OR any alt name. UNION dedupes by person id.
+		sqlQ = fmt.Sprintf(`
+			WITH matches AS (
+				SELECT id FROM person WHERE %s LIKE '%%' || ? || '%%'
+				UNION
+				SELECT n.person_id AS id FROM name n WHERE %s LIKE '%%' || ? || '%%'
+			)
+			SELECT p.id::VARCHAR, p.wikidata_qid, p.birth_name,
+			       p.birth_date_y, p.death_date_y,
+			       p.birth_place, p.bio_short,
+			       p.era, p.dynasty, p.current_family_name, p.lineage_branch,
+			       p.trust_score, p.primary_source
+			FROM person p
+			JOIN matches m ON m.id = p.id
+			ORDER BY
+			    (p.wikidata_qid IS NOT NULL) DESC,
+			    p.trust_score DESC,
+			    p.birth_date_y NULLS LAST,
+			    p.birth_name
+			LIMIT ?
+		`, normalizeExpr("birth_name"), normalizeExpr("n.name"))
+		args = append(args, qn, qn, limit)
 	}
-	args = append(args, limit)
-
-	sqlQ := fmt.Sprintf(`
-		SELECT id::VARCHAR, wikidata_qid, birth_name,
-		       birth_date_y, death_date_y,
-		       birth_place, bio_short,
-		       era, dynasty, current_family_name, lineage_branch,
-		       trust_score, primary_source
-		FROM person
-		WHERE %s
-		ORDER BY
-		    (wikidata_qid IS NOT NULL) DESC,
-		    trust_score DESC,
-		    birth_date_y NULLS LAST,
-		    birth_name
-		LIMIT ?
-	`, where)
 
 	rows, err := s.db.QueryContext(ctx, sqlQ, args...)
 	if err != nil {
@@ -124,7 +147,7 @@ func (s *Store) Search(ctx context.Context, q string, limit int) (*SearchResult,
 
 	res := &SearchResult{Q: q, Verified: []Suggestion{}, Community: []Suggestion{}}
 	for rows.Next() {
-		var sug Suggestion
+		sug := Suggestion{SourceBadges: []string{}}
 		var qid, bp, bio, dyn, family, branch, src sql.NullString
 		var by, dy, trust sql.NullInt64
 		if err := rows.Scan(

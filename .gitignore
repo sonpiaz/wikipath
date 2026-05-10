@@ -1,0 +1,6 @@
+/wikipath
+/wikipath-crawl
+/wikipath-serve
+graph.json
+*.log
+.DS_Store

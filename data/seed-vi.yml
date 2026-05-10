@@ -1,0 +1,711 @@
+# wikipath seed data — 50 hand-curated Vietnamese profiles
+# Used for local dev. Production replaces with Wikidata + Wikipedia VN imports.
+#
+# Format:
+#   persons:    list with stable string ID (slug). Loader hashes slug → UUID.
+#   relations:  reference persons by slug. Direction follows schema convention:
+#               "<from> has <kind> <to>".
+
+persons:
+  # ─────────── Nhà Lý (1009–1225) ───────────
+  - id: ly-thai-to
+    qid: Q316006
+    birth_name: Lý Công Uẩn
+    family_name: Lý
+    era: pre-1500
+    dynasty: ly
+    birth_y: 974
+    death_y: 1028
+    birth_place: Cổ Pháp, Bắc Ninh
+    bio_short: Vua sáng lập nhà Lý, dời đô từ Hoa Lư về Thăng Long năm 1010.
+    historicity: confirmed
+    gender: male
+    names:
+      - { name: Lý Thái Tổ, kind: temple }
+      - { name: Lý Công Uẩn, kind: birth }
+
+  - id: ly-thai-tong
+    qid: Q316023
+    birth_name: Lý Phật Mã
+    family_name: Lý
+    era: pre-1500
+    dynasty: ly
+    birth_y: 1000
+    death_y: 1054
+    bio_short: Vua thứ hai nhà Lý, mở rộng pháp luật và Phật giáo.
+    historicity: confirmed
+    gender: male
+    names:
+      - { name: Lý Thái Tông, kind: temple }
+      - { name: Lý Phật Mã, kind: birth }
+
+  - id: ly-thanh-tong
+    qid: Q316085
+    birth_name: Lý Nhật Tôn
+    family_name: Lý
+    era: pre-1500
+    dynasty: ly
+    birth_y: 1023
+    death_y: 1072
+    bio_short: Vua thứ ba nhà Lý, đổi tên nước thành Đại Việt năm 1054.
+    gender: male
+    names:
+      - { name: Lý Thánh Tông, kind: temple }
+
+  - id: ly-nhan-tong
+    qid: Q316111
+    birth_name: Lý Càn Đức
+    family_name: Lý
+    era: pre-1500
+    dynasty: ly
+    birth_y: 1066
+    death_y: 1128
+    bio_short: Vua thứ tư nhà Lý, trị vì 56 năm dài nhất sử Việt.
+    gender: male
+    names:
+      - { name: Lý Nhân Tông, kind: temple }
+
+  # ─────────── Nhà Trần (1226–1400) ───────────
+  - id: tran-thua
+    birth_name: Trần Thừa
+    family_name: Trần
+    era: pre-1500
+    dynasty: tran
+    birth_y: 1184
+    death_y: 1234
+    bio_short: Cha của Trần Cảnh (Trần Thái Tông), Thái thượng hoàng đầu nhà Trần.
+    gender: male
+
+  - id: tran-thai-tong
+    qid: Q738877
+    birth_name: Trần Cảnh
+    family_name: Trần
+    era: pre-1500
+    dynasty: tran
+    birth_y: 1218
+    death_y: 1277
+    bio_short: Vua đầu nhà Trần, lên ngôi năm 8 tuổi sau khi nhận ngôi từ Lý Chiêu Hoàng.
+    gender: male
+    names:
+      - { name: Trần Thái Tông, kind: temple }
+
+  - id: tran-thanh-tong
+    qid: Q700919
+    birth_name: Trần Hoảng
+    family_name: Trần
+    era: pre-1500
+    dynasty: tran
+    birth_y: 1240
+    death_y: 1290
+    bio_short: Vua thứ hai nhà Trần, cùng cha và con đánh thắng quân Nguyên Mông.
+    gender: male
+
+  - id: tran-nhan-tong
+    qid: Q706519
+    birth_name: Trần Khâm
+    family_name: Trần
+    era: pre-1500
+    dynasty: tran
+    birth_y: 1258
+    death_y: 1308
+    bio_short: Vua thứ ba nhà Trần, lãnh đạo hai cuộc kháng chiến chống Nguyên Mông, sáng lập Thiền phái Trúc Lâm.
+    gender: male
+    names:
+      - { name: Trần Nhân Tông, kind: temple }
+      - { name: Hương Vân Đại Đầu Đà, kind: dharma }
+
+  - id: tran-hung-dao
+    qid: Q260200
+    birth_name: Trần Quốc Tuấn
+    family_name: Trần
+    era: pre-1500
+    dynasty: tran
+    birth_y: 1228
+    death_y: 1300
+    bio_short: Đại vương, tướng lĩnh đánh thắng quân Nguyên Mông ba lần. Cháu nội Trần Lý.
+    gender: male
+    names:
+      - { name: Hưng Đạo Đại Vương, kind: posthumous }
+      - { name: Trần Quốc Tuấn, kind: birth }
+
+  # ─────────── Nhà Hậu Lê (sơ) ───────────
+  - id: le-loi
+    qid: Q316127
+    birth_name: Lê Lợi
+    family_name: Lê
+    era: pre-1500
+    dynasty: le
+    birth_y: 1385
+    death_y: 1433
+    birth_place: Lam Sơn, Thanh Hóa
+    bio_short: Lãnh tụ khởi nghĩa Lam Sơn, sáng lập nhà Hậu Lê.
+    gender: male
+    names:
+      - { name: Lê Thái Tổ, kind: temple }
+      - { name: Bình Định Vương, kind: courtesy }
+
+  - id: le-thai-tong
+    qid: Q316296
+    birth_name: Lê Nguyên Long
+    family_name: Lê
+    era: pre-1500
+    dynasty: le
+    birth_y: 1423
+    death_y: 1442
+    bio_short: Vua thứ hai nhà Hậu Lê, mất trẻ trong vụ án Lệ Chi Viên.
+    gender: male
+
+  - id: le-nhan-tong
+    qid: Q316350
+    birth_name: Lê Bang Cơ
+    family_name: Lê
+    era: pre-1500
+    dynasty: le
+    birth_y: 1441
+    death_y: 1459
+    bio_short: Vua thứ ba nhà Hậu Lê, bị anh cùng cha khác mẹ Lê Nghi Dân giết.
+    gender: male
+
+  - id: le-thanh-tong
+    qid: Q316410
+    birth_name: Lê Tư Thành
+    family_name: Lê
+    era: pre-1500
+    dynasty: le
+    birth_y: 1442
+    death_y: 1497
+    bio_short: Vua thứ năm nhà Hậu Lê, định lập bộ luật Hồng Đức, mở rộng cương thổ.
+    gender: male
+    names:
+      - { name: Lê Thánh Tông, kind: temple }
+
+  - id: nguyen-trai
+    qid: Q700864
+    birth_name: Nguyễn Trãi
+    family_name: Nguyễn
+    era: pre-1500
+    dynasty: le
+    birth_y: 1380
+    death_y: 1442
+    bio_short: Khai quốc công thần nhà Hậu Lê, tác giả Bình Ngô đại cáo. Bị tru di tam tộc oan.
+    gender: male
+    names:
+      - { name: Ức Trai, kind: pen }
+
+  # ─────────── Tây Sơn ───────────
+  - id: nguyen-nhac
+    qid: Q1138
+    birth_name: Nguyễn Nhạc
+    family_name: Nguyễn
+    era: 1500-1900
+    dynasty: tay-son
+    birth_y: 1743
+    death_y: 1793
+    bio_short: Anh cả ba anh em Tây Sơn, vua đầu Trung ương Hoàng đế.
+    gender: male
+    names:
+      - { name: Thái Đức Hoàng đế, kind: temple }
+
+  - id: nguyen-lu
+    birth_name: Nguyễn Lữ
+    family_name: Nguyễn
+    era: 1500-1900
+    dynasty: tay-son
+    birth_y: 1754
+    death_y: 1787
+    bio_short: Em thứ hai trong ba anh em Tây Sơn, Đông Định Vương cai quản Gia Định.
+    gender: male
+
+  - id: quang-trung
+    qid: Q708559
+    birth_name: Nguyễn Huệ
+    family_name: Nguyễn
+    era: 1500-1900
+    dynasty: tay-son
+    birth_y: 1753
+    death_y: 1792
+    bio_short: Em út trong ba anh em Tây Sơn, đại thắng quân Thanh năm Kỷ Dậu (1789).
+    gender: male
+    names:
+      - { name: Quang Trung Hoàng đế, kind: temple }
+      - { name: Nguyễn Huệ, kind: birth }
+      - { name: Bắc Bình Vương, kind: courtesy }
+
+  - id: quang-toan
+    birth_name: Nguyễn Quang Toản
+    family_name: Nguyễn
+    era: 1500-1900
+    dynasty: tay-son
+    birth_y: 1783
+    death_y: 1802
+    bio_short: Vua cuối nhà Tây Sơn, lên ngôi năm 10 tuổi, bị Nguyễn Ánh giết năm 19 tuổi.
+    gender: male
+    names:
+      - { name: Cảnh Thịnh Hoàng đế, kind: temple }
+
+  # ─────────── Nhà Nguyễn (1802–1945) ───────────
+  - id: nguyen-phuc-luan
+    birth_name: Nguyễn Phúc Luân
+    family_name: Nguyễn Phúc
+    era: 1500-1900
+    dynasty: nguyen
+    birth_y: 1733
+    death_y: 1765
+    bio_short: Thân phụ vua Gia Long, được truy phong Hưng Tổ Hiếu Khang Hoàng đế.
+    gender: male
+
+  - id: gia-long
+    qid: Q179107
+    birth_name: Nguyễn Phúc Ánh
+    family_name: Nguyễn Phúc
+    era: 1500-1900
+    dynasty: nguyen
+    birth_y: 1762
+    death_y: 1820
+    birth_place: Phú Xuân, Huế
+    bio_short: Vua đầu triều Nguyễn, lập nên một quốc gia Việt Nam thống nhất từ Bắc tới Nam.
+    gender: male
+    names:
+      - { name: Gia Long Hoàng đế, kind: temple }
+      - { name: Nguyễn Phúc Ánh, kind: birth }
+
+  - id: minh-mang
+    qid: Q381019
+    birth_name: Nguyễn Phúc Đảm
+    family_name: Nguyễn Phúc
+    era: 1500-1900
+    dynasty: nguyen
+    birth_y: 1791
+    death_y: 1841
+    bio_short: Vua thứ hai triều Nguyễn, có 142 con với 43 vợ. Cấm Công giáo gay gắt.
+    gender: male
+    names:
+      - { name: Minh Mạng Hoàng đế, kind: temple }
+
+  - id: thieu-tri
+    qid: Q317213
+    birth_name: Nguyễn Phúc Miên Tông
+    family_name: Nguyễn Phúc
+    era: 1500-1900
+    dynasty: nguyen
+    birth_y: 1807
+    death_y: 1847
+    bio_short: Vua thứ ba triều Nguyễn, cha của Tự Đức và Hồng Cai.
+    gender: male
+
+  - id: tu-duc
+    qid: Q317221
+    birth_name: Nguyễn Phúc Hồng Nhậm
+    family_name: Nguyễn Phúc
+    era: 1500-1900
+    dynasty: nguyen
+    birth_y: 1829
+    death_y: 1883
+    bio_short: Vua thứ tư triều Nguyễn, không có con, nuôi ba con của các em làm thái tử.
+    gender: male
+    names:
+      - { name: Tự Đức Hoàng đế, kind: temple }
+
+  - id: hong-cai
+    birth_name: Nguyễn Phúc Hồng Cai
+    family_name: Nguyễn Phúc
+    era: 1500-1900
+    dynasty: nguyen
+    birth_y: 1845
+    death_y: 1876
+    bio_short: Em vua Tự Đức, Kiến Thái Vương, cha vua Hàm Nghi và Đồng Khánh.
+    gender: male
+    names:
+      - { name: Kiến Thái Vương, kind: courtesy }
+
+  - id: ham-nghi
+    qid: Q316970
+    birth_name: Nguyễn Phúc Ưng Lịch
+    family_name: Nguyễn Phúc
+    era: 1500-1900
+    dynasty: nguyen
+    birth_y: 1871
+    death_y: 1944
+    bio_short: Vua thứ tám triều Nguyễn, lãnh tụ phong trào Cần Vương, bị Pháp đày sang Algérie.
+    gender: male
+
+  - id: dong-khanh
+    qid: Q316981
+    birth_name: Nguyễn Phúc Ưng Kỷ
+    family_name: Nguyễn Phúc
+    era: 1500-1900
+    dynasty: nguyen
+    birth_y: 1864
+    death_y: 1889
+    bio_short: Vua thứ chín triều Nguyễn, anh cùng cha với Hàm Nghi, ông nội Bảo Đại.
+    gender: male
+
+  - id: khai-dinh
+    qid: Q317055
+    birth_name: Nguyễn Phúc Bửu Đảo
+    family_name: Nguyễn Phúc
+    era: 1900-1950
+    dynasty: nguyen
+    birth_y: 1885
+    death_y: 1925
+    bio_short: Vua thứ mười hai triều Nguyễn, cha Bảo Đại, công khai thân Pháp.
+    gender: male
+
+  - id: bao-dai
+    qid: Q170978
+    birth_name: Nguyễn Phúc Vĩnh Thụy
+    family_name: Nguyễn Phúc
+    era: 1900-1950
+    dynasty: nguyen
+    birth_y: 1913
+    death_y: 1997
+    bio_short: Vua cuối cùng của Việt Nam, thoái vị tháng 8/1945. Sống lưu vong ở Pháp.
+    gender: male
+    names:
+      - { name: Bảo Đại Hoàng đế, kind: temple }
+      - { name: Nguyễn Phúc Vĩnh Thụy, kind: birth }
+
+  - id: nam-phuong
+    qid: Q251786
+    birth_name: Nguyễn Hữu Thị Lan
+    family_name: Nguyễn Hữu
+    original_family_name: Nguyễn Hữu
+    era: 1900-1950
+    dynasty: nguyen
+    birth_y: 1914
+    death_y: 1963
+    bio_short: Hoàng hậu cuối cùng của Việt Nam, vợ chính Bảo Đại.
+    gender: female
+    names:
+      - { name: Nam Phương Hoàng hậu, kind: posthumous }
+
+  # ─────────── Hồ Chí Minh family ───────────
+  - id: nguyen-sinh-sac
+    qid: Q3290275
+    birth_name: Nguyễn Sinh Sắc
+    family_name: Nguyễn Sinh
+    era: 1900-1950
+    dynasty: hien-dai
+    birth_y: 1862
+    death_y: 1929
+    bio_short: Cha Hồ Chí Minh, phó bảng triều Nguyễn, tri huyện Bình Khê.
+    gender: male
+
+  - id: hoang-thi-loan
+    birth_name: Hoàng Thị Loan
+    family_name: Hoàng
+    original_family_name: Hoàng
+    era: 1900-1950
+    dynasty: hien-dai
+    birth_y: 1868
+    death_y: 1901
+    bio_short: Mẹ Hồ Chí Minh, dệt vải nuôi gia đình khi chồng đi học.
+    gender: female
+
+  - id: hcm
+    qid: Q36014
+    birth_name: Nguyễn Sinh Cung
+    family_name: Nguyễn Sinh
+    era: 1900-1950
+    dynasty: hien-dai
+    birth_y: 1890
+    birth_m: 5
+    birth_d: 19
+    death_y: 1969
+    death_m: 9
+    death_d: 2
+    birth_place: Nghệ An
+    death_place: Hà Nội
+    bio_short: Lãnh tụ phong trào Cộng sản Việt Nam, Chủ tịch nước VNDCCH (1945–1969).
+    gender: male
+    names:
+      - { name: Hồ Chí Minh, kind: pen }
+      - { name: Nguyễn Tất Thành, kind: courtesy }
+      - { name: Nguyễn Ái Quốc, kind: pen }
+      - { name: Bác Hồ, kind: nick }
+      - { name: Nguyễn Sinh Cung, kind: birth }
+
+  - id: nguyen-thi-thanh
+    birth_name: Nguyễn Thị Thanh
+    family_name: Nguyễn Sinh
+    era: 1900-1950
+    dynasty: hien-dai
+    birth_y: 1884
+    death_y: 1954
+    bio_short: Chị cả Hồ Chí Minh, hoạt động kháng Pháp ở Nghệ An.
+    gender: female
+
+  - id: nguyen-sinh-khiem
+    birth_name: Nguyễn Sinh Khiêm
+    family_name: Nguyễn Sinh
+    era: 1900-1950
+    dynasty: hien-dai
+    birth_y: 1888
+    death_y: 1950
+    bio_short: Anh trai Hồ Chí Minh, từng bị thực dân Pháp đày Côn Đảo.
+    gender: male
+
+  # ─────────── Ngô Đình family (VNCH) ───────────
+  - id: ngo-dinh-kha
+    birth_name: Ngô Đình Khả
+    family_name: Ngô Đình
+    era: 1900-1950
+    dynasty: hien-dai
+    birth_y: 1857
+    death_y: 1923
+    bio_short: Quan triều Nguyễn, Phụ chính của vua Thành Thái, cha của 6 con trai bao gồm Diệm và Nhu.
+    gender: male
+
+  - id: ngo-dinh-khoi
+    birth_name: Ngô Đình Khôi
+    family_name: Ngô Đình
+    era: 1900-1950
+    dynasty: hien-dai
+    birth_y: 1885
+    death_y: 1945
+    bio_short: Anh cả Ngô Đình Diệm, Tổng đốc Quảng Nam, bị Việt Minh xử bắn 1945.
+    gender: male
+
+  - id: ngo-dinh-thuc
+    qid: Q316828
+    birth_name: Ngô Đình Thục
+    family_name: Ngô Đình
+    era: 1900-1950
+    dynasty: hien-dai
+    birth_y: 1897
+    death_y: 1984
+    bio_short: Anh trai Ngô Đình Diệm, Tổng giám mục Huế.
+    gender: male
+
+  - id: ngo-dinh-diem
+    qid: Q57672
+    birth_name: Ngô Đình Diệm
+    family_name: Ngô Đình
+    era: 1900-1950
+    dynasty: hien-dai
+    birth_y: 1901
+    birth_m: 1
+    birth_d: 3
+    death_y: 1963
+    death_m: 11
+    death_d: 2
+    birth_place: Quảng Bình
+    bio_short: Tổng thống đầu tiên Việt Nam Cộng hòa (1955–1963), bị đảo chính giết.
+    gender: male
+
+  - id: ngo-dinh-nhu
+    qid: Q316840
+    birth_name: Ngô Đình Nhu
+    family_name: Ngô Đình
+    era: 1900-1950
+    dynasty: hien-dai
+    birth_y: 1910
+    death_y: 1963
+    bio_short: Em Ngô Đình Diệm, cố vấn chính trị VNCH, bị giết cùng anh trong đảo chính 1963.
+    gender: male
+
+  - id: tran-le-xuan
+    qid: Q235617
+    birth_name: Trần Lệ Xuân
+    family_name: Trần
+    original_family_name: Trần
+    era: 1900-1950
+    dynasty: hien-dai
+    birth_y: 1924
+    death_y: 2011
+    bio_short: Vợ Ngô Đình Nhu, "Đệ nhất phu nhân" thời chính phủ Diệm. Còn gọi là Madame Nhu.
+    gender: female
+    is_living: false
+    names:
+      - { name: Madame Nhu, kind: nick, language: en }
+
+  - id: ngo-dinh-can
+    birth_name: Ngô Đình Cẩn
+    family_name: Ngô Đình
+    era: 1900-1950
+    dynasty: hien-dai
+    birth_y: 1911
+    death_y: 1964
+    bio_short: Em Ngô Đình Diệm, cai quản miền Trung, bị xử tử công khai 1964.
+    gender: male
+
+  - id: ngo-dinh-luyen
+    birth_name: Ngô Đình Luyện
+    family_name: Ngô Đình
+    era: 1900-1950
+    dynasty: hien-dai
+    birth_y: 1914
+    death_y: 1990
+    bio_short: Em út trong gia đình Ngô Đình, đại sứ VNCH tại Anh.
+    gender: male
+
+  # ─────────── TBT Đảng Cộng sản Việt Nam ───────────
+  - id: truong-chinh
+    qid: Q237421
+    birth_name: Đặng Xuân Khu
+    family_name: Đặng
+    era: 1900-1950
+    dynasty: hien-dai
+    birth_y: 1907
+    death_y: 1988
+    bio_short: TBT Đảng Cộng sản Việt Nam (1956–1986 không liên tục).
+    gender: male
+    names:
+      - { name: Trường Chinh, kind: pen }
+
+  - id: le-duan
+    qid: Q441057
+    birth_name: Lê Duẩn
+    family_name: Lê
+    era: 1900-1950
+    dynasty: hien-dai
+    birth_y: 1907
+    death_y: 1986
+    bio_short: TBT ĐCS Việt Nam (1960–1986), kiến trúc sư chính sách thống nhất đất nước.
+    gender: male
+
+  - id: nguyen-van-linh
+    qid: Q700943
+    birth_name: Nguyễn Văn Cúc
+    family_name: Nguyễn
+    era: 1900-1950
+    dynasty: hien-dai
+    birth_y: 1915
+    death_y: 1998
+    bio_short: TBT ĐCS Việt Nam (1986–1991), khởi xướng Đổi Mới.
+    gender: male
+    names:
+      - { name: Nguyễn Văn Linh, kind: pen }
+
+  - id: do-muoi
+    qid: Q438999
+    birth_name: Nguyễn Duy Cống
+    family_name: Nguyễn
+    era: 1900-1950
+    dynasty: hien-dai
+    birth_y: 1917
+    death_y: 2018
+    bio_short: TBT ĐCS Việt Nam (1991–1997).
+    gender: male
+    names:
+      - { name: Đỗ Mười, kind: pen }
+
+  - id: nong-duc-manh
+    qid: Q380980
+    birth_name: Nông Đức Mạnh
+    family_name: Nông
+    era: 1950+
+    dynasty: hien-dai
+    birth_y: 1940
+    death_y: null
+    is_living: true
+    consent_status: opt_out
+    bio_short: TBT ĐCS Việt Nam (2001–2011). Người dân tộc Tày đầu tiên giữ chức TBT.
+    gender: male
+
+  - id: nguyen-phu-trong
+    qid: Q207854
+    birth_name: Nguyễn Phú Trọng
+    family_name: Nguyễn Phú
+    era: 1900-1950
+    dynasty: hien-dai
+    birth_y: 1944
+    birth_m: 4
+    birth_d: 14
+    death_y: 2024
+    death_m: 7
+    death_d: 19
+    birth_place: Đông Anh, Hà Nội
+    bio_short: TBT ĐCS Việt Nam (2011–2024). Lãnh đạo lâu nhất sau Lê Duẩn.
+    gender: male
+
+  # ─────────── Đại tướng ───────────
+  - id: vo-nguyen-giap
+    qid: Q318051
+    birth_name: Võ Nguyên Giáp
+    family_name: Võ
+    era: 1900-1950
+    dynasty: hien-dai
+    birth_y: 1911
+    death_y: 2013
+    bio_short: Đại tướng đầu tiên Quân đội Nhân dân Việt Nam, chỉ huy chiến thắng Điện Biên Phủ 1954.
+    gender: male
+
+# ─────────── Relations (50+ edges) ───────────
+relations:
+  # Nhà Lý chain
+  - { from: ly-thai-tong, to: ly-thai-to,    kind: parent_father }
+  - { from: ly-thanh-tong, to: ly-thai-tong, kind: parent_father }
+  - { from: ly-nhan-tong, to: ly-thanh-tong, kind: parent_father }
+
+  # Nhà Trần chain
+  - { from: tran-thai-tong, to: tran-thua,      kind: parent_father }
+  - { from: tran-thanh-tong, to: tran-thai-tong, kind: parent_father }
+  - { from: tran-nhan-tong, to: tran-thanh-tong, kind: parent_father }
+  # Trần Hưng Đạo: cháu nội Trần Lý (chú của Trần Thái Tông), em họ Trần Thái Tông.
+  # Without Trần Lý in seed, mark sibling_paternal as approximation (cousin-by-house).
+  - { from: tran-hung-dao, to: tran-thai-tong, kind: sibling_paternal,
+      source_kind: book, source_ref: "Đại Việt sử ký toàn thư (cousin approximated as paternal sibling)" }
+
+  # Nhà Lê (sơ) chain
+  - { from: le-thai-tong,  to: le-loi,        kind: parent_father }
+  - { from: le-nhan-tong,  to: le-thai-tong,  kind: parent_father }
+  - { from: le-thanh-tong, to: le-thai-tong,  kind: parent_father }
+  # Nhân Tông và Thánh Tông là anh em cùng cha khác mẹ
+  - { from: le-nhan-tong, to: le-thanh-tong, kind: sibling_paternal }
+
+  # Tây Sơn (3 anh em ruột)
+  - { from: nguyen-nhac, to: quang-trung, kind: sibling_full }
+  - { from: nguyen-nhac, to: nguyen-lu,   kind: sibling_full }
+  - { from: nguyen-lu,   to: quang-trung, kind: sibling_full }
+  - { from: quang-toan,  to: quang-trung, kind: parent_father }
+
+  # Nhà Nguyễn chain (Phúc Luân → Gia Long → Minh Mạng → Thiệu Trị → Tự Đức/Hồng Cai)
+  - { from: gia-long,   to: nguyen-phuc-luan, kind: parent_father }
+  - { from: minh-mang,  to: gia-long,         kind: parent_father }
+  - { from: thieu-tri,  to: minh-mang,        kind: parent_father }
+  - { from: tu-duc,     to: thieu-tri,        kind: parent_father }
+  - { from: hong-cai,   to: thieu-tri,        kind: parent_father }
+  - { from: tu-duc,     to: hong-cai,         kind: sibling_paternal }
+  # Hàm Nghi và Đồng Khánh là anh em ruột (cùng cha Hồng Cai)
+  - { from: ham-nghi,   to: hong-cai,         kind: parent_father }
+  - { from: dong-khanh, to: hong-cai,         kind: parent_father }
+  - { from: ham-nghi,   to: dong-khanh,       kind: sibling_full }
+  # Tự Đức nhận nuôi 3 đứa, trong đó có Đồng Khánh (con Hồng Cai)
+  - { from: tu-duc,     to: dong-khanh,       kind: child_adopted,
+      source_kind: book, source_ref: "Đại Nam thực lục" }
+  # Khải Định: con Đồng Khánh
+  - { from: khai-dinh,  to: dong-khanh,       kind: parent_father }
+  # Bảo Đại: con Khải Định
+  - { from: bao-dai,    to: khai-dinh,        kind: parent_father }
+  # Bảo Đại - Nam Phương
+  - { from: bao-dai,    to: nam-phuong,       kind: spouse, rank: 1, period_start_y: 1934 }
+
+  # Hồ Chí Minh family
+  - { from: hcm,                to: nguyen-sinh-sac,  kind: parent_father }
+  - { from: hcm,                to: hoang-thi-loan,   kind: parent_mother }
+  - { from: nguyen-thi-thanh,   to: nguyen-sinh-sac,  kind: parent_father }
+  - { from: nguyen-thi-thanh,   to: hoang-thi-loan,   kind: parent_mother }
+  - { from: nguyen-sinh-khiem,  to: nguyen-sinh-sac,  kind: parent_father }
+  - { from: nguyen-sinh-khiem,  to: hoang-thi-loan,   kind: parent_mother }
+  - { from: hcm,                to: nguyen-thi-thanh, kind: sibling_full }
+  - { from: hcm,                to: nguyen-sinh-khiem, kind: sibling_full }
+  - { from: nguyen-thi-thanh,   to: nguyen-sinh-khiem, kind: sibling_full }
+  # Nguyễn Sinh Sắc là chồng Hoàng Thị Loan
+  - { from: nguyen-sinh-sac,    to: hoang-thi-loan,   kind: spouse, rank: 1 }
+
+  # Ngô Đình family (6 anh em ruột, cha Ngô Đình Khả)
+  - { from: ngo-dinh-khoi,   to: ngo-dinh-kha,  kind: parent_father }
+  - { from: ngo-dinh-thuc,   to: ngo-dinh-kha,  kind: parent_father }
+  - { from: ngo-dinh-diem,   to: ngo-dinh-kha,  kind: parent_father }
+  - { from: ngo-dinh-nhu,    to: ngo-dinh-kha,  kind: parent_father }
+  - { from: ngo-dinh-can,    to: ngo-dinh-kha,  kind: parent_father }
+  - { from: ngo-dinh-luyen,  to: ngo-dinh-kha,  kind: parent_father }
+  # 6 anh em ruột (chỉ ghi 5 cạnh để tạo cluster connectivity, không cần đầy đủ pairwise)
+  - { from: ngo-dinh-khoi,  to: ngo-dinh-thuc,  kind: sibling_full }
+  - { from: ngo-dinh-thuc,  to: ngo-dinh-diem,  kind: sibling_full }
+  - { from: ngo-dinh-diem,  to: ngo-dinh-nhu,   kind: sibling_full }
+  - { from: ngo-dinh-nhu,   to: ngo-dinh-can,   kind: sibling_full }
+  - { from: ngo-dinh-can,   to: ngo-dinh-luyen, kind: sibling_full }
+  # Trần Lệ Xuân vợ Ngô Đình Nhu
+  - { from: ngo-dinh-nhu,   to: tran-le-xuan,   kind: spouse, rank: 1, period_start_y: 1943 }

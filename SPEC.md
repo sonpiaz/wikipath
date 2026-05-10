@@ -1,486 +1,407 @@
-# SPEC — sixth-degree
+# wikipath — SPEC v1
 
-Phase 3 deliverable. Clean-room specification. Team B reads ONLY this file
-(plus SPRINT-PLAN.md) when implementing — they never see input/ or analysis/.
+**Vietnamese family tree + relationship explorer.** Open-data, community-curated.
 
-## Hard rules for this file
+> v0 = celebrity-hop-chain Wikipedia mention BFS. Shipped 2026-05-10 as
+> proof of stack. Archived in `docs/SPEC-v0-celebrity-hops.md`. v1 below
+> is the real product; reuses v0's Go/SSE/DuckDB skeleton.
 
-1. NO code blocks longer than 3 lines.
-2. NO exact strings longer than 40 characters from source bundles or repos.
-3. NO source-repo file paths or function names.
-4. Every feature scores 9/9 on the rubric.
+## 1. Positioning (1 paragraph)
 
-## Product overview (3 sentences)
+Public, open-data application để tra cứu cây gia phả của người Việt nổi
+tiếng (vua chúa, chính trị gia, nghệ sĩ, doanh nhân, KOL). Khác 8 player
+hiện tại (đều positioning private "tạo gia phả nhà bạn"): wikipath là
+public reference + viral discovery tool. Khác Entitree (global,
+English-Wikidata-only): Vietnamese-first, multi-source enrichment, native
+cultural conventions (đa thê, tên húy, dòng họ + chi + đời, triều đại).
 
-A web app that finds the shortest chain of Wikipedia mentions between any
-two famous people in a curated list of ~10,000. The user picks a start and
-end name, and the app streams its breadth-first search progress over a live
-connection, finally drawing the shortest path on a graph canvas. The
-distinction from generic six-degrees-of-Wikipedia tools is the curated
-celebrity-only dataset (so every node is recognizable) and the per-level
-streaming visualization (so the user sees the search expand outward, not
-just the final answer).
+## 2. Core scope (5 features locked)
 
-## Core user journeys
-
-### Journey 1 — Land on the page
-A first-time visitor opens the page and sees a header, two empty name
-inputs, an empty log panel, and an empty graph canvas. Within a second the
-inputs become typeable. No login is required and no onboarding modal
-appears. The footer briefly explains that connections come from Wikipedia
-mentions, not real-world meetings.
-
-### Journey 2 — Pick two people
-The user clicks the first input and starts typing a name. A debounced
-autocomplete (≤300ms) shows up to 50 matching names from the curated list.
-Picking a name fills the input and closes the dropdown. The user repeats
-for the second input, and the search button transitions from disabled to
-enabled, signalled by color and a soft glow.
-
-### Journey 3 — Run a search
-The user clicks the search button. A live connection opens to the server,
-the log panel prints "connected" and "searching from X to Y", and per-level
-progress lines stream in (one summary line per BFS level). When the path
-is found, a final success line lists each step joined by an arrow, the
-graph canvas highlights the path with larger nodes and a distinct color
-spaced apart from the explored nodes, and the search button re-enables for
-another query. Total perceived latency on a healthy network is under 5
-seconds for a 4-hop path.
-
-### Journey 4 — Adapt to a slow device
-On a low-end phone or a 3G link, the client detects the constraint via
-browser hints (Save-Data, network type, device memory, CPU concurrency)
-and asks the server to skip the heavy adjacency-map payload. The graph
-canvas instead grows incrementally as per-level events stream in, so the
-visualization is interactive even when the bulk endpoint would have
-timed out.
-
-### Journey 5 — Failure recovery
-If the user picks a name that's not actually in the graph (typo, stale
-copy-paste, or future i18n mismatch) the server returns a single error
-message and the client shows it as a red log line. The search button
-re-enables immediately so the user can correct and retry. If the live
-connection drops mid-search, the client logs "connection closed
-unexpectedly" and the user can retry. No partial state persists.
-
-## Tech stack inferred (informational; Team B may differ)
-
-- **Frontend**: a single-page React + TypeScript app, Vite-built, styled
-  with utility CSS (e.g. Tailwind), graph rendered with a canvas-based
-  graph library plus a separate graph-data library
-- **Backend**: a single Go binary serving the API, a streaming endpoint,
-  and the static SPA bundle, all on one port
-- **Database**: none. A precomputed adjacency map is loaded into memory
-  at boot and serves all reads
-- **Infra/hosting**: a small container on a simple cloud host (the
-  original ran on serverless, then on a basic VM); free-tier-sized
-
-## Features
-
----
-
-### Feature 1 — Curated person picker
-
-**Priority**: L1
-
-**1. User outcome.** Pick two specific names from a curated list quickly,
-without scrolling through 10k entries.
-
-**2. Trigger.** User focuses the start or end input and types ≥1 char.
-
-**3. Inputs.**
-- `q` (string, 0–80 chars, case-insensitive) — substring filter
-- focus state (which input is active) — drives which state bucket the
-  selection lands in
-
-**4. Outputs / side effects.**
-- A list of ≤50 candidate names rendered below the input
-- On click: input filled, dropdown closes, app state records the pick
-- Empty-query focus: returns the full sorted list (paginated UI not
-  required at 10k entries; treat as a virtualized scrollable list)
-
-**5. States.**
-- idle (input empty, list closed)
-- typing (input non-empty, debounce window open)
-- loading (debounce fired, request in flight)
-- list-shown (results rendered)
-- list-empty (no matches)
-- selected (input filled, list closed)
-- error (request failed; show inline retry hint)
-
-**6. State transitions.**
-- idle → typing: keystroke
-- typing → loading: 300 ms idle
-- loading → list-shown: 200 OK with ≥1 match
-- loading → list-empty: 200 OK with 0 matches
-- loading → error: non-2xx or network failure
-- list-shown → selected: click on a name
-- selected → typing: user edits the input again
-
-**7. Error conditions.**
-- 4xx: render "couldn't load names" inline; allow retry
-- 5xx: same as 4xx with optional "we'll retry automatically" hint
-- offline: same; the list can fall back to a baked-in JSON if shipped
-- 401: not applicable (no auth)
-
-**8. Boundaries.**
-- Max 50 results returned per query while filtering
-- Empty-query: full list (≤10,200 names) returned once and cached client-
-  side for 5 min
-- Debounce 300 ms; client retries 2× on transient failure
-
-**9. Out of scope.**
-- Fuzzy matching, typo correction, transliteration
-- Image avatars or extra metadata in the dropdown
-- Recently-picked / favorites
-
----
-
-### Feature 2 — Pathfinding search
-
-**Priority**: L1
-
-**1. User outcome.** Get the shortest hop chain between two picked names,
-visualized as both a list and a graph.
-
-**2. Trigger.** Both endpoints picked AND user clicks the search button.
-
-**3. Inputs.**
-- `startNode` (string, must equal an exact name in the curated list)
-- `endNode` (string, must equal an exact name in the curated list)
-
-**4. Outputs / side effects.**
-- A live stream of per-level progress messages
-- A final success message with the ordered path and its length
-- Graph-canvas state updated as messages arrive
-- The search button is disabled for the duration of the query
-
-**5. States.**
-- idle (no search active)
-- connecting (opening live connection)
-- searching (receiving level-progress events)
-- path-rendering (final-path events arriving)
-- done (success or error logged, button re-enabled)
-
-**6. State transitions.**
-- idle → connecting: button click
-- connecting → searching: connection open + first level event
-- searching → path-rendering: final-path event
-- path-rendering → done: last final-path event
-- any → done(error): error event or socket close
-
-**7. Error conditions.**
-- start or end not in graph: server emits an error message
-- no path exists: server emits an error message (rare; the curated graph
-  is connected by construction but defensive)
-- connection drops mid-stream: client logs an error, surfaces a retry
-- server timeout: surfaces as an error; retry resets state
-
-**8. Boundaries.**
-- Server caps each connection at 15 s of wall time; new search = new
-  connection
-- BFS depth bound is the natural depth of the graph (≤8 hops observed)
-- Max 1 in-flight search per client at a time
-- Total streamed messages per query ≤20 in the level-summary mode
-
-**9. Out of scope.**
-- Multiple paths (only the first shortest path is returned)
-- Weighted edges
-- "Explain why this hop exists" narration
-- Cancel-mid-search button (search either completes or the connection
-  drops; no explicit cancel)
-
----
-
-### Feature 3 — Streaming progress log
-
-**Priority**: L1
-
-**1. User outcome.** See the search progressing rather than staring at a
-spinner.
-
-**2. Trigger.** Live connection opens for a search.
-
-**3. Inputs.** Server-sent message stream (typed as level-summary,
-final-path-node, success, error).
-
-**4. Outputs / side effects.**
-- A scrolling list of timestamped lines, color-coded info / success /
-  error
-- Auto-scroll to the newest line; cap at, say, 200 lines
-
-**5. States.** rendering, capped, error.
-
-**6. State transitions.**
-- rendering → capped: line count exceeds cap, oldest lines drop
-- rendering → error: error event arrives
-- error → rendering: next search clears the log
-
-**7. Error conditions.**
-- Unknown message type from server: render "unknown event" warning line
-- Garbled JSON: render parse-error warning line
-- Empty stream: log shows only the "connected" line; user can still retry
-
-**8. Boundaries.**
-- 200-line cap (older lines removed)
-- 4-color palette (info, success, warn, error)
-
-**9. Out of scope.**
-- Persistence across reloads
-- Search/filter inside the log
-- Export to file
-
----
-
-### Feature 4 — Graph canvas visualization
-
-**Priority**: L1
-
-**1. User outcome.** See the search frontier expand and the final path
-stand out clearly.
-
-**2. Trigger.** Search starts; canvas listens to the same event stream.
-
-**3. Inputs.**
-- Per-level event: list of node names added to the explored set
-- Final-path event: an ordered list of node names that constitute the
-  shortest path
-- (Optional) Bulk adjacency map fetched at page load when the device is
-  not in reduced-data mode
-
-**4. Outputs / side effects.**
-- Nodes drawn as circles, labeled, in two visual classes:
-  "explored" (small, muted color) and "path" (larger, distinct color,
-  artificially spaced apart along an arc or line)
-- Edges drawn between consecutive nodes in the explored frontier (light)
-  and along the final path (highlighted)
-- Pan + zoom interaction on the canvas
-
-**5. States.** empty, growing, path-highlight, frozen (post-success),
-error.
-
-**6. State transitions.**
-- empty → growing: first level event
-- growing → path-highlight: final-path event
-- path-highlight → frozen: last final-path event
-- any → empty: new search clears the canvas
-
-**7. Error conditions.**
-- Bulk graph fetch fails: silently fall back to streaming-only viz
-- Renderer throws: degrade to log-only mode
-
-**8. Boundaries.**
-- Hard cap: do not render more than 5,000 nodes simultaneously
-- Use a canvas (not SVG) renderer for performance
-
-**9. Out of scope.**
-- Click-a-node-to-pivot interaction
-- Save/share the rendered graph as an image
-- 3D layout
-
----
-
-### Feature 5 — Reduced-data adaptive mode
-
-**Priority**: L2
-
-**1. User outcome.** The app remains usable on low-end phones and slow
-links instead of timing out.
-
-**2. Trigger.** Page load. Client probes browser hints; if any of {network
-type is 2g/3g, save-data is on, device memory <4, CPU cores <4} is true,
-adaptive mode is on.
-
-**3. Inputs.**
-- Browser navigator hints (network info, device memory, CPU)
-- Optional explicit query flag the client may set
-
-**4. Outputs / side effects.**
-- Bulk adjacency-map fetch is replaced by a 204 short-circuit; the canvas
-  builds itself from streamed events instead
-
-**5. States.** unknown, normal, reduced, override.
-
-**6. State transitions.**
-- unknown → normal: hints absent or all green
-- unknown → reduced: any hint trips
-- any → override: user toggles a manual switch (out of scope for v0.1)
-
-**7. Error conditions.**
-- Hints API absent: assume normal mode
-- 204 received but client thought it asked for full payload: degrade
-  silently to streaming-only
-
-**8. Boundaries.**
-- Pure client-side decision; server respects an explicit query flag and
-  the standard reduced-data request header
-
-**9. Out of scope.**
-- A user-visible "fast / data-saver" toggle
-- A/B telemetry on which mode users land in
-
----
-
-### Feature 6 — Self-contained deployable container
-
-**Priority**: L1 (infra)
-
-**1. User outcome.** A single small image runs the whole app: API + live
-connection + SPA bundle on one port, no external services.
-
-**2. Trigger.** Operator deploys the image.
-
-**3. Inputs.**
-- Build context: source tree + the precomputed adjacency map file
-- Optional env: a port override
-
-**4. Outputs / side effects.**
-- A static binary serves on a single port
-- The SPA is served from the same port with a fallback to the index page
-  for client-side routing
-- The precomputed adjacency map is bundled into the image
-
-**5. States.** building, running, healthy, fatal-on-missing-graph.
-
-**6. State transitions.**
-- start → fatal: graph file missing or corrupt → exit with a clear error
-- start → healthy: graph loaded, server listening
-
-**7. Error conditions.**
-- Missing graph at startup: hard fail with a single log line
-- Port already in use: hard fail
-- Graph file present but unreadable (bad JSON): hard fail with a parse
-  message
-
-**8. Boundaries.**
-- Image size goal: under 25 MB for the final layer (excluding the graph
-  file)
-- Cold-boot to "ready" goal: under 1 second on a small VM
-
-**9. Out of scope.**
-- Health-check probe endpoints (Team B may add `/healthz` if useful)
-- Hot-reload of the graph in a running process
-- Multiple replicas behind a load balancer
-
----
-
-### Feature 7 — Crawl pipeline (build-time)
-
-**Priority**: L1 (build), L2 (runtime visibility — none)
-
-**1. User outcome.** A reproducible build step that produces the
-adjacency map from a list of seed names. Operator-only; not a user-facing
-feature.
-
-**2. Trigger.** Operator runs the crawler binary against a seed file.
-
-**3. Inputs.**
-- A newline-delimited file of canonical names (~10k lines), one per line
-- Optional concurrency knob (default 10 workers)
-- A polite User-Agent string
-
-**4. Outputs / side effects.**
-- A JSON file mapping each seed name to its list of seed-name neighbors
-  (edges that point to OTHER seed names; the rest of Wikipedia is
-  filtered out)
-- Per-name progress logged to stdout
-- Errors per name logged but do not abort the run
-
-**5. States.** loading-seeds, fetching, aggregating, written, failed.
-
-**6. State transitions.**
-- loading-seeds → fetching: seeds parsed and fanned out to workers
-- fetching → aggregating: workers complete or stream into the aggregator
-- aggregating → written: graph file flushed to disk
-
-**7. Error conditions.**
-- Source API rate-limits us: retry with exponential backoff and bounded
-  attempts
-- Source API returns 5xx: same retry policy
-- Seed file missing: hard fail with a clear log
-- Per-name fetch fails after retries: skip that name and continue
-
-**8. Boundaries.**
-- Worker pool default 10
-- Per-request timeout ~30 s, idle connection pool sized for steady state
-- Pagination respected via the API's continuation token until empty
-- Total runtime target ≤5 min for 10k seeds
-
-**9. Out of scope.**
-- Incremental crawl (add new names without redoing all)
-- Distributed crawl across multiple machines
-- A web dashboard for the crawl
-
----
-
-## Data model
-
-| Entity | Fields | Relationships |
+| # | Feature | Phase |
 |---|---|---|
-| Person | `name` (string, unique within graph) | many-to-many to Person via `Edge` |
-| Edge | `from` (name), `to` (name), direction = directed | belongs to Graph |
-| Graph (singleton) | adjacency map keyed by `name` | composed of all Edges |
-| PathResult | `path` (ordered Person[]), `length` (int) | derived per query |
-| LevelEvent | `level` (int), `nodes` (string[]) | streamed during a query |
+| F1 | **Data enrichment pipeline** — Wikidata + Wikipedia VN + LLM + community | core |
+| F2 | **Search** — Person-only filter, mất dấu fuzzy, 3-tier grouping | core |
+| F3 | **Family tree** — vertical, era-aware, VN cultural | core |
+| F4 | **Detail modal** — quick stats, source citations, contribute action | core |
+| F5 | **Compare / family-path** — BFS over relations table (cross-over from v0) | v0.2 |
+| F6 | **Community contribute** — auth, edit form, audit log, CLA | v0.2 |
 
-Edges are **directed**: A may point to B even if B does not point back
-(real Wikipedia link structure is asymmetric). BFS traverses the directed
-edges from `start` toward `end`.
+## 3. Data model (Vietnamese-aware)
 
-## Cross-cutting concerns
+Tables in DuckDB (read-path) + Postgres (write-path, mirrored).
 
-### Authentication
-None. Public, no accounts. CORS open.
+### `person`
 
-### Permissions / roles
-None. Single anonymous user role.
+| field | type | note |
+|---|---|---|
+| `id` | uuid v7 | primary key, time-ordered |
+| `wikidata_qid` | text nullable | e.g. `Q36014` |
+| `wikipedia_vi_url` | text nullable | https://vi.wikipedia.org/wiki/... |
+| `birth_name` | text | "Nguyễn Phú Trọng" |
+| `current_family_name` | text | "Nguyễn Phú" |
+| `original_family_name` | text nullable | nhũ danh cho phụ nữ |
+| `lineage_branch` | text nullable | "chi 4" |
+| `era` | text | `pre-1500 / 1500-1900 / 1900-1950 / 1950+ / mythological` |
+| `dynasty` | text nullable | `Lý / Trần / Lê / Mạc / Trịnh / Tây Sơn / Nguyễn / Hiện đại` |
+| `birth_date` | date partial | YYYY, YYYY-MM, YYYY-MM-DD all valid |
+| `death_date` | date partial | same |
+| `birth_place` | text | district-level minimum |
+| `death_place` | text nullable | |
+| `bio_short` | text ≤280 | one-tweet summary |
+| `bio_full` | markdown | longer narrative |
+| `avatar_url` | text nullable | |
+| `historicity` | enum | `confirmed/probable/legendary/mythological` |
+| `gender` | enum | `male/female/other/unknown` (lưu ý: schema chấp nhận, UI tôn trọng quy ước truyền thống) |
+| `is_living` | bool | gates privacy logic |
+| `consent_status` | enum | `public/opt_out/private` (default `public` for non-living, `opt_out` for living) |
+| `trust_score` | int 0-100 | computed from source confidence |
+| `created_at` / `updated_at` | timestamp | |
 
-### Pricing / billing surfaces
-None. Free public app. The crawl uses a free public API.
+### `name`
 
-### Internationalization
-v0.1: English-only labels and English-Wikipedia dataset. The data
-pipeline must be encoding-clean (UTF-8 throughout) so future i18n is a
-data swap, not a code rewrite.
+Multiple names per person.
 
-### Accessibility
-- All inputs labeled
-- Search button has a clear disabled state with `aria-disabled`
-- Color is not the only signal (use icons + text in the log too)
-- Canvas: provide a textual fallback (the log already serves this)
+| field | type | note |
+|---|---|---|
+| `person_id` | fk | |
+| `name` | text | |
+| `kind` | enum | `birth / courtesy (tên hiệu) / posthumous (tên thụy) / dharma (pháp danh) / pen / nick / cooking_name (tên cúng cơm) / taboo (húy)` |
+| `period_start` / `period_end` | date partial nullable | |
+| `language` | text | `vi/zh-han/en/...` |
 
-### Performance budgets
-- p95 perceived latency from "click search" to "first level event": <2 s
-- p95 perceived latency from "click search" to "path found": <8 s for a
-  4-hop path on broadband
-- Server-side per-search wall time: <5 s typical; hard cap 15 s
-- Cold container boot: <1 s
-- Bulk graph endpoint: short-circuit with 204 on reduced-data signals
-- Bundle: <250 KB gzipped for the SPA JS
+### `relation`
 
-## Smell test results (filled by Team A before sealing)
+Edges, directed.
 
-### Fresh-session test
-- This SPEC is self-contained: a fresh Claude session can implement
-  Feature 1, 2, 3, 4 without re-reading source.
-- Estimated implementation-choice questions per feature: 1–2.
-- Estimated behavior questions per feature: 0.
+| field | type | note |
+|---|---|---|
+| `id` | uuid v7 | |
+| `from_person_id` | fk | |
+| `to_person_id` | fk | |
+| `kind` | enum | `parent_father / parent_mother / child_birth / child_adopted / child_step / child_foster / spouse / sibling_full / sibling_paternal / sibling_maternal / ritual_kin` |
+| `rank` | int nullable | `1=chính, 2=thứ, ...` for spouse/concubine |
+| `period_start` / `period_end` | date partial nullable | |
+| `source_kind` | enum | `wikidata / wikipedia_vi / news / book / community / oral` |
+| `source_ref` | text | URL / book citation / contributor_id |
+| `confidence` | int 0-100 | |
+| `created_by` | fk contributor nullable | |
+| `created_at` | timestamp | |
 
-### Replay test
-- 5 user journeys above each fit in 3–5 sentences with explicit states
-  and outcomes. Pass.
+### `contributor`
 
-### Boundary test
-- "What if both names are the same?" → Feature 2 input rule (must equal
-  exact names) plus the path cap; treat path = [name] length 1 (Team B
-  decision; document in implementation notes).
-- "What if the user clicks search twice rapidly?" → Feature 2 boundary:
-  max 1 in-flight; second click is ignored or replaces the first.
-- "What if the graph file is older than the seed file?" → Feature 6
-  fatal-on-missing applies only to absence; mismatch is operator's
-  responsibility.
+| field | type | note |
+|---|---|---|
+| `id` | uuid v7 | |
+| `email` | text unique | |
+| `display_name` | text | |
+| `lineage_affiliation` | text nullable | `Nguyễn Phú` (self-claimed, gamification only) |
+| `trust_tier` | int 0-5 | 0=new, 5=mod |
+| `cla_signed_at` | timestamp | required to contribute |
+| `created_at` | timestamp | |
 
-### Clean-check
-- No code blocks >3 lines.
-- No source strings >40 chars.
-- No source file paths or function names.
+### `contribution_log`
+
+Append-only audit log. Public.
+
+| field | type | note |
+|---|---|---|
+| `id` | uuid v7 | |
+| `contributor_id` | fk | |
+| `entity_type` | enum | `person / name / relation` |
+| `entity_id` | fk | |
+| `kind` | enum | `create / edit / delete / approve / reject` |
+| `before_payload` | jsonb nullable | |
+| `after_payload` | jsonb | |
+| `status` | enum | `pending / approved / rejected / auto_approved` |
+| `reviewed_by` | fk contributor nullable | |
+| `created_at` | timestamp | |
+
+## 4. Data pipeline
+
+### 4.1 Wikidata bulk (Phase 1)
+
+- Source: `dumps.wikimedia.org/wikidatawiki/entities/latest-all.json.bz2`
+- Stream parse with `pgzip` + sonic JSON; filter where any of:
+  - `P31 = Q5` AND (`P27 = Q881` OR `P19/P20` in VN places)
+  - `P31 = Q5` AND `P172 = Q126480` (Vietnamese ethnic group)
+  - Historic VN entities (vua, hoàng tộc) without `P27` but with VN-era markers
+- Extract claims: `P22 P25 P26 P40 P3373 P569 P570 P19 P20 P39 P166 P21`
+- Output: insert into `person` + `relation` + `name` (DuckDB)
+- Coverage estimate from probe: 480 unique persons, 26% với ≥1 family relation, **biased toward pre-1900 royals**
+
+### 4.2 Wikipedia VN infobox (Phase 2)
+
+Bridges the 1900-2026 gap (Wikidata coverage <20% there).
+
+- Source: `dumps.wikimedia.org/viwiki/latest/viwiki-latest-pages-articles.xml.bz2`
+- Parse only namespace 0 (articles)
+- Match templates: `{{Thông tin nhân vật}}`, `{{Thông tin viên chức}}`, `{{Thông tin vua}}`, `{{Thông tin nghệ sĩ}}`, `{{Thông tin diễn viên}}`, etc.
+- Extract fields: `cha`, `mẹ`, `vợ`, `chồng`, `con`, `anh chị em`, `tiền nhiệm`, `kế nhiệm`, `triều đại`
+- Resolve link targets to `wikidata_qid` (via interwiki) or insert as new community-tier person
+- Conflict detection vs Wikidata → flag for moderation
+- Re-run weekly via cron (low cost, dump is ~3GB)
+
+### 4.3 LLM enrichment (Phase 3)
+
+For Wikipedia VN articles **without** a structured infobox.
+
+- Pipeline: per article, send full text + system prompt to Kyma `deepseek-v4-pro`
+- System prompt: "Extract father, mother, spouses, children, siblings as JSON. Each must include `source_sentence` quote from the article. If unsure, return null."
+- Validate: `source_sentence` must literal-substring-match article body
+- Confidence score: based on sentence quality + multi-source agreement
+- Output: `relation` rows with `source_kind=llm_enrich`, `confidence` ≤80
+- Anything <60 confidence → moderation queue, never auto-published
+
+### 4.4 Community contribution (Phase 4 → v0.2)
+
+- Auth: magic email link (Resend). No Google/FB OAuth (user VN dị ứng).
+- CLA accept on first sign-in.
+- Forms:
+  - **Add person**: 8 fields (name, gender, era, dynasty optional, birth/death y, place, source).
+  - **Add relation**: pick 2 persons (or create new), kind, rank, source.
+  - **Edit existing**: any field, propose change → moderation.
+- Auto-approve threshold: 2 independent contributions agree, or contributor `trust_tier ≥ 3`.
+- Soft delete only. Audit log permanent.
+- Privacy gate: cannot create/edit person with `is_living=true` + `consent_status=public` unless contributor uploads consent proof.
+
+### 4.5 Local development data flow
+
+For day-1 dev without 150GB dump:
+
+```
+seed-vi.txt  →  wikipedia-vi-fetch (per-name)  →  parse infobox  →  duckdb local
+```
+
+Bootstrap với 200 người Việt nổi tiếng (vua các triều, lãnh đạo, V-pop, tỷ phú). Đủ để test full UX. Bulk Wikidata dump là Phase 1 production task, không block dev.
+
+## 5. Search (F2)
+
+- Backend: Postgres for community write, DuckDB FTS for read.
+  - DuckDB FTS5 với custom Vietnamese tokenizer (bỏ dấu, normalize đệm)
+  - Mất dấu: "nguyen phu trong" → match "Nguyễn Phú Trọng"
+  - Viết tắt: "ng phu trong" → match
+  - Levenshtein ≤2 trên token cuối
+- Endpoint: `GET /api/search?q=&era=&lineage=&region=&limit=20`
+- Response: 3 buckets in single response:
+  ```
+  { verified: [...], community: [...], suggestion: "Thêm 'X' vào dòng họ?" }
+  ```
+- Suggestion shape:
+  ```
+  {
+    id, avatar_url,
+    name: "Nguyễn Phú Trọng",
+    years: "1944–2024",
+    role: "TBT ĐCS Việt Nam",
+    region: "Đông Anh, Hà Nội",
+    lineage: "Nguyễn Phú · chi 4 · đời 17",
+    source_badges: ["wikipedia", "wikidata", "community(3)"],
+    trust_score: 95
+  }
+  ```
+
+## 6. Family tree (F3)
+
+- Library: react-flow (controlled, custom node component)
+- Layout: vertical (parents up, children down)
+- Default: 4 đời lên + 3 đời xuống from ego
+- Ego node: 20% larger, border 2px primary, shadow
+- Spouse: same row, double-line connector `═`
+- Sibling: row 1 grid below ego, single-line connector `─`
+- Half-sibling: dashed connector
+- Adopted/step: dotted connector
+- Era badge top-right of node (color-coded per dynasty)
+- Lineage tag below name (`Nguyễn Phú · chi 4 · đời 17`)
+- Mobile: column carousel, swipe horizontal through generations
+- Click node → `/p/[qid-or-slug]`, re-render tree centered on new ego
+- URL pattern: `/p/Q36014` for Wikidata-tied, `/p/c-{uuid}` for community-only
+- Era color palette:
+  - Lý (gold), Trần (red), Lê (blue), Mạc (purple), Trịnh (green), Tây Sơn (orange), Nguyễn (yellow), Pháp thuộc (gray), Hiện đại (slate)
+  - Mythological (faded violet with diagonal stripe)
+
+## 7. Detail modal (F4)
+
+- Avatar 200×200, fallback monogram
+- Name (ego) + 2-3 alt names if exists
+- Quick stats row: `👨‍👩‍👧‍👦 1 vợ · 2 con · 4 cháu`
+- Lineage row: `🌳 Nguyễn Phú · chi 4 · đời 17`
+- Era + dynasty row: `🏛️ Hiện đại · Cộng hòa Xã hội Chủ nghĩa Việt Nam`
+- Birth/death: dual-line, `📅 14/04/1944 (Đông Anh, Hà Nội) – 19/07/2024 (Hà Nội)`
+- Names section (collapsed): tên húy / tên thường gọi / tên hiệu
+- Bio: max 3 lines + "đọc thêm" → expand inline
+- Source citations: bullet list with kind icon + label (not just emoji)
+  ```
+  📚 Wikipedia tiếng Việt (truy cập 2026-05-10)
+  🏛️ Wikidata Q36014 (snapshot 2026-05-09)
+  📰 VNExpress, "Tổng Bí thư Nguyễn Phú Trọng từ trần" (2024-07-19)
+  👥 3 đóng góp cộng đồng
+  ```
+- Action bar (bottom):
+  - `[Show tree]` — primary
+  - `[Compare]` — secondary, opens person picker
+  - `[✏️ Sửa]` — text button, gated by login
+  - `[➕ Thêm người thân]` — text button, gated by login
+  - `[🚩 Báo lỗi]` — text button
+
+## 8. Compare / family path (F5, v0.2)
+
+- Pick 2 persons (`?from=Q36014&to=Q170978`)
+- BFS over `relation` table treating all kinds as undirected for path search
+- Output: ordered chain with edge labels
+  - "Hồ Chí Minh ─cha─ Nguyễn Sinh Sắc ─cùng đời với─ ... ─chú─ Bảo Đại"
+- Common ancestor detection: if BFS finds both reaching shared person → "tổ chung 5 đời"
+- OG image: render mini-tree of the path → `/og/path?from=&to=` returns PNG
+- Share URL: `/path/Q36014/Q170978`
+
+## 9. Stack
+
+| Layer | Choice | Reason |
+|---|---|---|
+| Backend | Go 1.24 stdlib + existing wikipath skeleton | reuse worker pool, retry, SSE patterns |
+| Read DB | DuckDB embedded (file in image) | <50ms 4-deep tree, ~3-5 GB after VN filter |
+| Write DB | Neon Postgres on Vercel | multi-writer, audit log, listen/notify for moderation |
+| Sync | DuckDB rebuilt nightly from Postgres + Wikidata snapshot | eventual consistency OK; reads not real-time |
+| Frontend | Next.js 16 App Router + Tailwind + shadcn/ui | SSR per profile = SEO; OG image via `@vercel/og`; shadcn = clean default |
+| Tree viz | react-flow + dagre layout | controllable, mobile-friendly |
+| Auth | Resend magic email link | no OAuth friction for VN users |
+| Search | DuckDB FTS5 + custom VN tokenizer | <30ms p95 |
+| LLM | Kyma `deepseek-v4-pro` via existing API | Son's own infrastructure |
+| Hosting | Vercel (Next.js) + Cloudflare R2 (DuckDB file mirror) | edge cache profile pages |
+
+## 10. URL structure
+
+- `/` — landing, search box dominant
+- `/p/[id]` — profile + tree (id = Wikidata QID or community UUID)
+- `/path/[from]/[to]` — relationship path
+- `/lineage/[slug]` — index page per dòng họ ("Nguyễn Phú", "Trần Hưng")
+- `/era/[slug]` — index per dynasty ("ly", "tran", "le", "nguyen")
+- `/contribute` — authenticated dashboard
+- `/about` — manifesto + sources + license
+- `/api/search`, `/api/p/[id]`, `/api/path` — JSON endpoints
+
+## 11. License + ToS
+
+- **Code**: MIT (existing LICENSE file).
+- **Database compilation**: **CC-BY-SA-4.0** + **ODbL** dual. Forces derivatives open.
+- **Individual contributions**: CLA grants project rights to re-license.
+- **Privacy**:
+  - Living people default `consent_status=opt_out`. Cannot publish without proof of consent.
+  - Public figures (politicians, celebrities) can be `consent_status=public` by default but takedown SLA still applies.
+  - Right to be forgotten: soft delete + 30-day retention + hard delete.
+- **Takedown SLA**: 7 days from email contact. `takedown@wikipath.app` (or wherever).
+- **DMCA-equivalent**: Vietnamese Copyright Law procedure, contact form.
+- **Audit log**: all edits public per profile, Wikipedia-style history page.
+- **Files in repo**: `LICENSE`, `LICENSE-DATA`, `PRIVACY.md`, `TERMS.md`, `CODE-OF-CONDUCT.md`, `CONTRIBUTOR-AGREEMENT.md`, `TAKEDOWN.md`, `DATA-SOURCES.md`.
+
+## 12. Repo layout
+
+```
+wikipath/
+├── cmd/
+│   ├── crawl/         (v0, deprecated; keep for archeology)
+│   ├── serve/         (v0, deprecated; replaced by Next.js + new Go API)
+│   ├── api/           (NEW: Go API for read-path, DuckDB-backed)
+│   ├── import-wikidata/   (NEW: bulk Wikidata dump filter)
+│   ├── import-wiki-vi/    (NEW: Wikipedia VN infobox parser)
+│   └── enrich-llm/    (NEW: Kyma LLM enrichment runner)
+├── internal/
+│   ├── schema/        (NEW: DuckDB + Postgres migrations)
+│   ├── store/         (NEW: read DuckDB / write Postgres)
+│   ├── search/        (NEW: VN tokenizer + FTS query builder)
+│   ├── wiki/          (rename from wiki/ → keep, used by importers)
+│   └── ...
+├── app/               (NEW: Next.js 16)
+│   ├── page.tsx
+│   ├── p/[id]/page.tsx
+│   ├── path/[from]/[to]/page.tsx
+│   ├── lineage/[slug]/page.tsx
+│   ├── api/...
+│   └── components/
+├── data/
+│   ├── seed-vi.txt        (200 names for local dev bootstrap)
+│   └── lineages.yml       (mapping: lineage slug → dynasty + era)
+├── docs/
+│   ├── SPEC-v0-celebrity-hops.md
+│   ├── SPRINT-PLAN-v0.md
+│   ├── ARCHITECTURE.md
+│   └── DATA-SOURCES.md
+├── PRIVACY.md
+├── TERMS.md
+├── CODE-OF-CONDUCT.md
+├── CONTRIBUTOR-AGREEMENT.md
+├── TAKEDOWN.md
+├── LICENSE
+├── LICENSE-DATA
+├── README.md
+└── SPEC.md (this file)
+```
+
+## 13. Order of execution (no time estimates per Son's directive)
+
+Numbered, not timed. Each is one focused session.
+
+1. **Schema** — DuckDB + Postgres migrations + sample data 50 hand-curated VN profiles. Verify queries return correct ancestry/descent.
+2. **Wikipedia VN infobox parser** — `import-wiki-vi`. Bootstrap 200-500 profiles from a curated VN names list. Spot check 10 profiles end-to-end.
+3. **Search API** — Go endpoint with VN-aware tokenizer. Curl test: "ng phu trong" returns Nguyễn Phú Trọng top.
+4. **Tree API** — `/api/p/[id]` returns 4-up + 3-down JSON. Curl test: HCM tree, Bảo Đại tree.
+5. **Next.js scaffold** — pages, shadcn install, Tailwind theme (dual mode, Be Vietnam Pro + Lora).
+6. **Search UI** — input + 3-bucket suggestion list with sample badges.
+7. **Tree UI** — react-flow custom node, ego highlight, era badge, mobile carousel.
+8. **Detail modal** — quick stats, source citations, action bar (Show tree/Compare/Edit/Add stubs).
+9. **Wikidata bulk import** — `import-wikidata` script. Run against 150GB dump. Verify post-import: ~500 VN profiles, era distribution matches probe.
+10. **LLM enrichment** — `enrich-llm` calling Kyma. Backfill profiles with no infobox.
+11. **Compare/path UI** — F5 ship.
+12. **Auth + community contribute** — F6 ship.
+13. **Policy docs** — write all `.md` files in repo, link from footer.
+14. **Deploy** — Vercel + Neon. Soft launch to 5 trusted users.
+
+Each item should fit in 30-90 minutes solo. If something blows past that, stop and rescope; don't push.
+
+## 14. Out of scope (anti-features)
+
+- Private family-only mode (8 competitors do this; we are explicitly public-by-default)
+- Mobile native app
+- Paid tier in v0.x
+- DNA matching
+- Government records integration
+- Lunar calendar primary mode (support secondary for display, never as canonical date)
+- Feng shui / lucky day analyses (Phả Tuệ does this; not our positioning)
+- Chat / forum / messaging
+- Photo restoration
+
+## 15. Definition of done for v0.1 launch
+
+- [ ] 200+ VN profiles loaded via Wikipedia VN infobox parser
+- [ ] Search "ng phu trong" returns Nguyễn Phú Trọng top in <100ms
+- [ ] Tree view renders 4-up + 3-down for ≥50 famous figures
+- [ ] Mobile carousel works on iPhone Safari
+- [ ] All 5 demo paths render correctly: Hồ Chí Minh, Bảo Đại, Lý Thái Tổ, Trần Hưng Đạo, Nguyễn Phú Trọng
+- [ ] PRIVACY/TERMS/LICENSE-DATA committed before any public profile published
+- [ ] Deployed to Vercel preview, share URL works
+
+## 16. Open questions (answer before starting #1)
+
+1. **Domain**: all short candidates đã registered. Pick: bid `coi.app` secondary market, or use longer alternative `wikipath.app` / `wikipath.vn`? Recommend `wikipath.vn` for now (consistent with repo, .vn signals Vietnamese-first).
+2. **Hosting cost**: DuckDB file in image = ~3-5GB → Vercel Functions image limit might bite. Alternative: serve DuckDB from Cloudflare R2 + load on demand. Decide after Phase 1 import.
+3. **Coverage of living political figures**: Nguyễn Phú Trọng family is sensitive (children/spouses publicly known but data scattered). Ship public or opt-out? Recommend `consent_status=public` for documented public figures with `is_living=true`, but flag for manual review pre-publish.
+4. **i18n**: VI primary, EN as compat second? Recommend VI-only for v0.1 (focus = Vietnamese audience), EN as v0.2 after community proves traction.
+
+---
+
+## Migration from v0
+
+What to **keep** from current wikipath repo:
+- Go module + standard library HTTP patterns
+- Worker pool pattern (`internal/crawl/pool.go` → reuse for `import-wikidata`)
+- Retry+backoff client (`internal/wiki/client.go` → rename to `internal/external/wikipedia.go`)
+- BFS algorithm (`internal/graph/graph.go` → reuse for F5 path search, swap data source)
+- SSE patterns (`internal/server/server.go` → reuse for streaming long imports)
+
+What to **deprecate**:
+- `cmd/crawl` (v0 celebrity-hop crawler) → archive in `docs/`
+- `cmd/serve` (v0 SSE-based BFS server) → replaced by `cmd/api` + Next.js
+- `web/` static SPA → replaced by `app/` Next.js
+- `seeds.txt` (88 global celebrities) → replaced by `data/seed-vi.txt`
+- `graph.json` (mention adjacency) → deleted, no longer canonical
+
+Initial v1 commit message: `feat: pivot to Vietnamese family tree + relationship explorer`.

@@ -45,8 +45,16 @@ export default function HomePage() {
               Bảo Đại
             </Link>
             {" · "}
-            <Link href="/p/Q260200" className="underline hover:text-foreground">
+            <Link href="/p/Q511375" className="underline hover:text-foreground">
               Trần Hưng Đạo
+            </Link>
+            {" · "}
+            <Link href="/p/Q210417" className="underline hover:text-foreground">
+              Gia Long
+            </Link>
+            {" · "}
+            <Link href="/p/Q316127" className="underline hover:text-foreground">
+              Lê Lợi
             </Link>
           </div>
         </div>

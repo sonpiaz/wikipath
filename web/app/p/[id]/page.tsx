@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getTree } from "@/lib/api";
+import { FamilyTree } from "@/components/family-tree";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -91,12 +92,7 @@ export default async function PersonPage({ params }: PageProps) {
           <Stat label="Người trong cây" value={tree.nodes.length} />
         </div>
 
-        <div className="rounded-xl border border-dashed border-border p-12 text-muted-foreground text-center text-sm">
-          <span className="font-mono">{`<FamilyTree ego={ego} tree={tree} />`}</span>
-          <div className="mt-2 text-xs">
-            Step #7 sẽ render bằng react-flow custom node
-          </div>
-        </div>
+        <FamilyTree tree={tree} />
 
         <details className="text-xs">
           <summary className="cursor-pointer text-muted-foreground hover:text-foreground">

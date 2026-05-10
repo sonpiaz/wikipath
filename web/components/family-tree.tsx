@@ -1,0 +1,399 @@
+"use client";
+
+import { useMemo } from "react";
+import {
+  ReactFlow,
+  Background,
+  Controls,
+  type Edge,
+  type Node,
+  Position,
+  Handle,
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import type { Tree, TreeEdge, TreeNode } from "@/lib/api";
+
+// ─────────── Era / dynasty palette ───────────
+
+const ERA_COLOR: Record<string, string> = {
+  ly: "var(--color-era-ly)",
+  tran: "var(--color-era-tran)",
+  le: "var(--color-era-le)",
+  mac: "var(--color-era-mac)",
+  trinh: "var(--color-era-trinh)",
+  "tay-son": "var(--color-era-tay-son)",
+  nguyen: "var(--color-era-nguyen)",
+  "hien-dai": "var(--color-era-hien-dai)",
+};
+
+const DYNASTY_LABEL: Record<string, string> = {
+  ly: "Lý",
+  tran: "Trần",
+  le: "Lê",
+  mac: "Mạc",
+  trinh: "Trịnh",
+  "tay-son": "Tây Sơn",
+  nguyen: "Nguyễn",
+  "hien-dai": "Hiện đại",
+};
+
+// ─────────── Layout ───────────
+
+const NODE_WIDTH = 180;
+const NODE_HEIGHT = 78;
+const COL_GAP = 40;
+const ROW_GAP = 90;
+
+type Level = number;
+
+/**
+ * Compute generation level for each node:
+ *   ego = 0, parents = -1, grandparents = -2, …
+ *   children = +1, grandchildren = +2, …
+ *   spouses + siblings inherit level of the connected ego/relative.
+ *
+ * Edges in the data follow the convention: parent_* edges have
+ *   from = child, to = parent.
+ */
+function computeLevels(
+  egoId: string,
+  nodes: TreeNode[],
+  edges: TreeEdge[],
+): Map<string, Level> {
+  const levels = new Map<string, Level>();
+  levels.set(egoId, 0);
+
+  const parentOf = new Map<string, string[]>(); // child -> [parent ids]
+  const childOf = new Map<string, string[]>(); // parent -> [child ids]
+  const symmetric = new Map<string, string[]>(); // node -> spouses+siblings
+
+  for (const e of edges) {
+    if (e.kind === "parent_father" || e.kind === "parent_mother") {
+      // from = child, to = parent
+      if (!parentOf.has(e.from)) parentOf.set(e.from, []);
+      parentOf.get(e.from)!.push(e.to);
+      if (!childOf.has(e.to)) childOf.set(e.to, []);
+      childOf.get(e.to)!.push(e.from);
+    } else if (e.kind.startsWith("child_")) {
+      // from = parent, to = child (adopted/step/foster)
+      if (!parentOf.has(e.to)) parentOf.set(e.to, []);
+      parentOf.get(e.to)!.push(e.from);
+      if (!childOf.has(e.from)) childOf.set(e.from, []);
+      childOf.get(e.from)!.push(e.to);
+    } else {
+      // spouse / sibling — same level
+      if (!symmetric.has(e.from)) symmetric.set(e.from, []);
+      symmetric.get(e.from)!.push(e.to);
+      if (!symmetric.has(e.to)) symmetric.set(e.to, []);
+      symmetric.get(e.to)!.push(e.from);
+    }
+  }
+
+  // BFS up from ego
+  const queue: [string, Level][] = [[egoId, 0]];
+  const seen = new Set<string>([egoId]);
+  while (queue.length) {
+    const [id, lvl] = queue.shift()!;
+    for (const p of parentOf.get(id) ?? []) {
+      if (!seen.has(p)) {
+        seen.add(p);
+        levels.set(p, lvl - 1);
+        queue.push([p, lvl - 1]);
+      }
+    }
+    for (const c of childOf.get(id) ?? []) {
+      if (!seen.has(c)) {
+        seen.add(c);
+        levels.set(c, lvl + 1);
+        queue.push([c, lvl + 1]);
+      }
+    }
+  }
+
+  // Assign symmetric (spouse / sibling) to same level as known partner
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const [id, partners] of symmetric.entries()) {
+      if (levels.has(id)) continue;
+      for (const p of partners) {
+        if (levels.has(p)) {
+          levels.set(id, levels.get(p)!);
+          changed = true;
+          break;
+        }
+      }
+    }
+  }
+
+  // Anything still un-leveled: place at row 0 (orphan)
+  for (const n of nodes) {
+    if (!levels.has(n.id)) levels.set(n.id, 0);
+  }
+  return levels;
+}
+
+type Positioned = TreeNode & { x: number; y: number; level: Level };
+
+function layout(
+  egoId: string,
+  nodes: TreeNode[],
+  edges: TreeEdge[],
+): Positioned[] {
+  const levels = computeLevels(egoId, nodes, edges);
+
+  // Group nodes by level
+  const byLevel = new Map<Level, TreeNode[]>();
+  for (const n of nodes) {
+    const lvl = levels.get(n.id) ?? 0;
+    if (!byLevel.has(lvl)) byLevel.set(lvl, []);
+    byLevel.get(lvl)!.push(n);
+  }
+
+  // Within each level, sort: ego center (level 0), spouses next, siblings outward,
+  // others by birth_year. For non-zero levels, sort by birth_year asc.
+  const spouseOf = new Set<string>();
+  const siblingOf = new Set<string>();
+  for (const e of edges) {
+    if (e.kind === "spouse" || e.kind === "concubine") {
+      if (e.from === egoId) spouseOf.add(e.to);
+      if (e.to === egoId) spouseOf.add(e.from);
+    } else if (e.kind.startsWith("sibling_")) {
+      if (e.from === egoId) siblingOf.add(e.to);
+      if (e.to === egoId) siblingOf.add(e.from);
+    }
+  }
+
+  const positioned: Positioned[] = [];
+  const sortedLevels = [...byLevel.keys()].sort((a, b) => a - b);
+  for (const lvl of sortedLevels) {
+    const row = byLevel.get(lvl)!;
+    if (lvl === 0) {
+      // Order: spouses (rank order), ego, siblings
+      const ego = row.find((n) => n.id === egoId);
+      const spouses = row.filter((n) => spouseOf.has(n.id));
+      const siblings = row.filter((n) => siblingOf.has(n.id));
+      const others = row.filter(
+        (n) => n.id !== egoId && !spouseOf.has(n.id) && !siblingOf.has(n.id),
+      );
+      const ordered = [
+        ...others,
+        ...siblings.sort(byBirthYear),
+        ...(ego ? [ego] : []),
+        ...spouses.sort(byBirthYear),
+      ];
+      placeRow(ordered, lvl, positioned, levels);
+    } else {
+      placeRow(row.slice().sort(byBirthYear), lvl, positioned, levels);
+    }
+  }
+
+  return positioned;
+}
+
+function byBirthYear(a: TreeNode, b: TreeNode): number {
+  return (a.birth_year ?? 9999) - (b.birth_year ?? 9999);
+}
+
+function placeRow(
+  ordered: TreeNode[],
+  lvl: Level,
+  out: Positioned[],
+  levels: Map<string, Level>,
+) {
+  const totalWidth = ordered.length * (NODE_WIDTH + COL_GAP);
+  let x = -totalWidth / 2;
+  for (const n of ordered) {
+    out.push({
+      ...n,
+      level: lvl,
+      x,
+      y: lvl * (NODE_HEIGHT + ROW_GAP),
+    });
+    x += NODE_WIDTH + COL_GAP;
+  }
+  void levels;
+}
+
+// ─────────── Custom node ───────────
+
+type FlowNodeData = {
+  node: Positioned;
+  isEgo: boolean;
+};
+
+function PersonNode({ data }: { data: FlowNodeData }) {
+  const { node, isEgo } = data;
+  const years = [node.birth_year, node.death_year]
+    .filter(Boolean)
+    .join("–");
+  const dynasty = node.dynasty ? DYNASTY_LABEL[node.dynasty] || node.dynasty : null;
+  const eraColor = node.dynasty
+    ? ERA_COLOR[node.dynasty]
+    : "var(--color-muted-foreground)";
+  const href = `/p/${encodeURIComponent(node.wikidata_qid || node.id)}`;
+
+  return (
+    <>
+      <Handle type="target" position={Position.Top} className="!opacity-0" />
+      <Link
+        href={href}
+        className={cn(
+          "block rounded-lg border bg-card text-card-foreground shadow-sm transition",
+          "px-3 py-2 hover:shadow-md hover:border-foreground/30",
+          isEgo
+            ? "border-primary/60 ring-2 ring-primary/30 scale-110"
+            : "border-border",
+        )}
+        style={{
+          width: NODE_WIDTH,
+          minHeight: NODE_HEIGHT,
+        }}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <span
+            className="font-name text-sm leading-tight line-clamp-2 flex-1"
+            title={node.name}
+          >
+            {node.name}
+          </span>
+          {dynasty && (
+            <span
+              className="text-[9px] uppercase tracking-wide shrink-0 mt-0.5 px-1.5 py-0.5 rounded font-medium"
+              style={{
+                color: eraColor,
+                borderColor: eraColor,
+                borderWidth: 1,
+              }}
+            >
+              {dynasty}
+            </span>
+          )}
+        </div>
+        {years && (
+          <div className="text-[11px] text-muted-foreground tabular-nums mt-1">
+            {years}
+          </div>
+        )}
+      </Link>
+      <Handle type="source" position={Position.Bottom} className="!opacity-0" />
+    </>
+  );
+}
+
+const nodeTypes = { person: PersonNode };
+
+// ─────────── Edge styling ───────────
+
+function buildEdges(edges: TreeEdge[]): Edge[] {
+  return edges.map((e, i) => {
+    const isParent =
+      e.kind === "parent_father" ||
+      e.kind === "parent_mother" ||
+      e.kind.startsWith("child_");
+    const isSpouse = e.kind === "spouse" || e.kind === "concubine";
+    const isSibling = e.kind.startsWith("sibling_");
+
+    let stroke = "var(--color-border)";
+    let strokeWidth = 1.5;
+    let strokeDasharray: string | undefined;
+    let label: string | undefined;
+
+    if (isParent) {
+      stroke = "var(--color-foreground)";
+      strokeWidth = 1.5;
+      if (e.kind === "child_adopted") {
+        strokeDasharray = "4 3";
+        label = "nuôi";
+      } else if (e.kind === "child_step") {
+        strokeDasharray = "2 4";
+        label = "kế";
+      }
+    } else if (isSpouse) {
+      stroke = "var(--color-primary)";
+      strokeWidth = 2;
+      // double line via thicker stroke; rank shows in label
+      if (e.rank && e.rank > 1) label = `vợ ${e.rank}`;
+    } else if (isSibling) {
+      stroke = "var(--color-muted-foreground)";
+      strokeWidth = 1;
+      if (e.kind === "sibling_paternal") {
+        strokeDasharray = "5 4";
+        label = "cùng cha";
+      } else if (e.kind === "sibling_maternal") {
+        strokeDasharray = "5 4";
+        label = "cùng mẹ";
+      }
+    }
+
+    // For parent edges, source = child (lower) → target = parent (upper).
+    // React Flow's default 'default' (bezier) draws nicely top-bottom.
+    // Layout direction we use: parent above (lower y), child below.
+    const source = isParent ? e.from : e.from;
+    const target = isParent ? e.to : e.to;
+
+    return {
+      id: `e-${i}-${e.from.slice(0, 6)}-${e.kind}-${e.to.slice(0, 6)}`,
+      source,
+      target,
+      type: isSibling || isSpouse ? "straight" : "smoothstep",
+      animated: false,
+      style: {
+        stroke,
+        strokeWidth,
+        ...(strokeDasharray ? { strokeDasharray } : {}),
+      },
+      label,
+      labelStyle: {
+        fontSize: 9,
+        fill: "var(--color-muted-foreground)",
+      },
+      labelBgStyle: { fill: "var(--color-background)" },
+      labelBgPadding: [3, 1] as [number, number],
+    };
+  });
+}
+
+// ─────────── Component ───────────
+
+export function FamilyTree({ tree }: { tree: Tree }) {
+  const { nodes, edges } = useMemo(() => {
+    const positioned = layout(tree.ego, tree.nodes, tree.edges);
+    const flowNodes: Node[] = positioned.map((p) => ({
+      id: p.id,
+      type: "person",
+      position: { x: p.x, y: p.y },
+      data: { node: p, isEgo: p.id === tree.ego },
+      width: NODE_WIDTH,
+      height: NODE_HEIGHT,
+    }));
+    const flowEdges = buildEdges(tree.edges);
+    return { nodes: flowNodes, edges: flowEdges };
+  }, [tree]);
+
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden h-[640px]">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        nodeTypes={nodeTypes}
+        fitView
+        fitViewOptions={{ padding: 0.2 }}
+        minZoom={0.3}
+        maxZoom={1.5}
+        nodesDraggable={false}
+        nodesConnectable={false}
+        elementsSelectable={false}
+        proOptions={{ hideAttribution: true }}
+      >
+        <Background color="var(--color-border)" gap={24} size={1} />
+        <Controls
+          showInteractive={false}
+          className="!bg-card !border-border [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-foreground"
+        />
+      </ReactFlow>
+    </div>
+  );
+}

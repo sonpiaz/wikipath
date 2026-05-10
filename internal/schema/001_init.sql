@@ -55,7 +55,9 @@ CREATE INDEX IF NOT EXISTS idx_person_name   ON person(birth_name);
 
 CREATE TABLE IF NOT EXISTS name (
     id            UUID PRIMARY KEY,
-    person_id     UUID NOT NULL REFERENCES person(id),
+    person_id     UUID NOT NULL,  -- logical FK to person(id); FKs disabled
+                                  -- because DuckDB blocks UPDATE on the parent
+                                  -- table whenever children reference it.
     name          VARCHAR NOT NULL,
     kind          VARCHAR NOT NULL,
     period_start  INTEGER,
@@ -68,8 +70,8 @@ CREATE INDEX IF NOT EXISTS idx_name_value  ON name(name);
 
 CREATE TABLE IF NOT EXISTS relation (
     id              UUID PRIMARY KEY,
-    from_person_id  UUID NOT NULL REFERENCES person(id),
-    to_person_id    UUID NOT NULL REFERENCES person(id),
+    from_person_id  UUID NOT NULL,  -- logical FK to person(id); see name table note
+    to_person_id    UUID NOT NULL,
     kind            VARCHAR NOT NULL,
     rank            INTEGER,
     period_start_y  INTEGER,

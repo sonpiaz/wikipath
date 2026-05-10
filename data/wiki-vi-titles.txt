@@ -1,0 +1,64 @@
+# Wikipedia VN titles to import. Pick people likely to have family-rich infoboxes.
+# Mix: vua các triều, lãnh đạo lịch sử, văn nghệ sĩ, chính trị gia hiện đại.
+# Comments and blank lines ignored.
+
+# Already-seeded people we want to enrich (will UPDATE existing rows, ADD new relations from infobox)
+Trần Hưng Đạo
+Hồ Chí Minh
+Bảo Đại
+Gia Long
+Lê Lợi
+Quang Trung
+Lý Thái Tổ
+Trần Thái Tông
+Ngô Đình Diệm
+Nguyễn Phú Trọng
+
+# New historic figures (chúa Nguyễn, Trịnh, Mạc, Lê, Lý, Trần)
+Lý Chiêu Hoàng
+Nguyễn Hoàng
+Nguyễn Phúc Nguyên
+Nguyễn Phúc Khoát
+Nguyễn Phúc Thuần
+Trịnh Kiểm
+Trịnh Tùng
+Trịnh Sâm
+Trịnh Doanh
+Mạc Đăng Dung
+Mạc Đăng Doanh
+Đinh Tiên Hoàng
+Lê Đại Hành
+Trần Thánh Tông
+Lê Hiến Tông
+
+# Phong trào yêu nước cận đại
+Phan Bội Châu
+Phan Châu Trinh
+Hoàng Hoa Thám
+Nguyễn Thái Học
+
+# Hiện đại — chính trị gia có infobox tốt
+Tôn Đức Thắng
+Phạm Văn Đồng
+Lê Đức Thọ
+Phạm Hùng
+Trần Đại Quang
+Nguyễn Tấn Dũng
+Nguyễn Xuân Phúc
+Trương Tấn Sang
+Nguyễn Minh Triết
+
+# Văn nghệ sĩ có Wikipedia VN giàu
+Trịnh Công Sơn
+Văn Cao
+Phạm Duy
+Đặng Thái Sơn
+Nguyễn Du
+Hồ Xuân Hương
+Nguyễn Trãi
+Lê Quý Đôn
+
+# VNCH thêm
+Nguyễn Văn Thiệu
+Nguyễn Cao Kỳ
+Dương Văn Minh

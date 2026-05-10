@@ -26,12 +26,25 @@ def slug_to_uuid(slug: str) -> uuid.UUID:
     return uuid.uuid5(NS, slug)
 
 
-def deterministic_relation_uuid(from_slug: str, kind: str, to_slug: str) -> uuid.UUID:
-    return uuid.uuid5(NS, f"{from_slug}|{kind}|{to_slug}")
+SYMMETRIC_KINDS = {
+    "spouse", "concubine",
+    "sibling_full", "sibling_paternal", "sibling_maternal",
+}
 
 
-def deterministic_name_uuid(person_slug: str, name: str, kind: str) -> uuid.UUID:
-    return uuid.uuid5(NS, f"name|{person_slug}|{kind}|{name}")
+def canonicalize_relation(from_id: uuid.UUID, kind: str, to_id: uuid.UUID):
+    if kind in SYMMETRIC_KINDS and str(from_id) > str(to_id):
+        return to_id, from_id
+    return from_id, to_id
+
+
+def deterministic_relation_uuid(from_id: uuid.UUID, kind: str, to_id: uuid.UUID) -> uuid.UUID:
+    fa, fb = canonicalize_relation(from_id, kind, to_id)
+    return uuid.uuid5(NS, f"rel|{fa}|{kind}|{fb}")
+
+
+def deterministic_name_uuid(person_id: uuid.UUID, name: str, kind: str) -> uuid.UUID:
+    return uuid.uuid5(NS, f"name|{person_id}|{kind}|{name}")
 
 
 def load_schema(con: duckdb.DuckDBPyConnection):
@@ -89,6 +102,7 @@ def insert_person(con: duckdb.DuckDBPyConnection, person: dict):
 
 
 def insert_names(con: duckdb.DuckDBPyConnection, person: dict):
+    pid = slug_to_uuid(person["id"])
     for entry in person.get("names", []):
         con.execute(
             """
@@ -96,8 +110,8 @@ def insert_names(con: duckdb.DuckDBPyConnection, person: dict):
             VALUES (?,?,?,?,?,?,?)
             """,
             [
-                deterministic_name_uuid(person["id"], entry["name"], entry["kind"]),
-                slug_to_uuid(person["id"]),
+                deterministic_name_uuid(pid, entry["name"], entry["kind"]),
+                pid,
                 entry["name"],
                 entry["kind"],
                 entry.get("period_start"),
@@ -112,6 +126,10 @@ def insert_relation(con: duckdb.DuckDBPyConnection, rel: dict, slug_set: set):
         if rel[k] not in slug_set:
             print(f"WARN: relation references unknown slug {rel[k]!r}: {rel}", file=sys.stderr)
             return
+    from_id = slug_to_uuid(rel["from"])
+    to_id = slug_to_uuid(rel["to"])
+    rid = deterministic_relation_uuid(from_id, rel["kind"], to_id)
+    from_id, to_id = canonicalize_relation(from_id, rel["kind"], to_id)
     con.execute(
         """
         INSERT INTO relation (
@@ -121,9 +139,9 @@ def insert_relation(con: duckdb.DuckDBPyConnection, rel: dict, slug_set: set):
         ) VALUES (?,?,?,?,?,?,?,?,?,?)
         """,
         [
-            deterministic_relation_uuid(rel["from"], rel["kind"], rel["to"]),
-            slug_to_uuid(rel["from"]),
-            slug_to_uuid(rel["to"]),
+            rid,
+            from_id,
+            to_id,
             rel["kind"],
             rel.get("rank"),
             rel.get("period_start_y"),

@@ -242,6 +242,47 @@ type Tree struct {
 	Edges    []TreeEdge `json:"edges"`
 }
 
+// PersonDetail is the rich payload for the click-to-preview modal.
+type PersonDetail struct {
+	ID              string   `json:"id"`
+	WikidataQID     *string  `json:"wikidata_qid,omitempty"`
+	WikipediaVIURL  *string  `json:"wikipedia_vi_url,omitempty"`
+	Name            string   `json:"name"`
+	BirthYear       *int     `json:"birth_year,omitempty"`
+	BirthMonth      *int     `json:"birth_month,omitempty"`
+	BirthDay        *int     `json:"birth_day,omitempty"`
+	DeathYear       *int     `json:"death_year,omitempty"`
+	DeathMonth      *int     `json:"death_month,omitempty"`
+	DeathDay        *int     `json:"death_day,omitempty"`
+	BirthPlace      *string  `json:"birth_place,omitempty"`
+	DeathPlace      *string  `json:"death_place,omitempty"`
+	BioShort        *string  `json:"bio_short,omitempty"`
+	BioFull         *string  `json:"bio_full,omitempty"`
+	Era             string   `json:"era"`
+	Dynasty         *string  `json:"dynasty,omitempty"`
+	FamilyName      *string  `json:"family_name,omitempty"`
+	LineageBranch   *string  `json:"lineage_branch,omitempty"`
+	Gender          string   `json:"gender"`
+	Historicity     string   `json:"historicity"`
+	IsLiving        bool     `json:"is_living"`
+	TrustScore      int      `json:"trust_score"`
+	PrimarySource   *string  `json:"primary_source,omitempty"`
+	SourceBadges    []string `json:"source_badges"`
+	AltNames        []AltName `json:"alt_names"`
+	// Counts for quick stats
+	ParentCount     int `json:"parent_count"`
+	SpouseCount     int `json:"spouse_count"`
+	ChildCount      int `json:"child_count"`
+	SiblingCount    int `json:"sibling_count"`
+	AncestorCount   int `json:"ancestor_count_4_gen"`
+	DescendantCount int `json:"descendant_count_3_gen"`
+}
+
+type AltName struct {
+	Name string `json:"name"`
+	Kind string `json:"kind"`
+}
+
 // GetTree returns ego + ancestors (up to upN) + descendants (up to downN) +
 // ego's spouses + ego's siblings.
 func (s *Store) GetTree(ctx context.Context, idOrQID string, upN, downN int) (*Tree, error) {
@@ -519,6 +560,159 @@ func (s *Store) collectSpouses(ctx context.Context, egoID string) ([]TreeEdge, e
 		edges = append(edges, e)
 	}
 	return edges, rows.Err()
+}
+
+func (s *Store) GetPersonDetail(ctx context.Context, idOrQID string) (*PersonDetail, error) {
+	row := s.db.QueryRowContext(ctx, `
+		SELECT id::VARCHAR, wikidata_qid, wikipedia_vi_url, birth_name,
+		       birth_date_y, birth_date_m, birth_date_d,
+		       death_date_y, death_date_m, death_date_d,
+		       birth_place, death_place,
+		       bio_short, bio_full,
+		       era, dynasty, current_family_name, lineage_branch,
+		       gender, historicity, is_living,
+		       trust_score, primary_source
+		FROM person
+		WHERE id::VARCHAR = ? OR wikidata_qid = ?
+		LIMIT 1
+	`, idOrQID, idOrQID)
+
+	var d PersonDetail
+	d.SourceBadges = []string{}
+	d.AltNames = []AltName{}
+	var qid, wikiURL, bp, dp, bio, bioFull, dyn, family, branch, src sql.NullString
+	var by, bm, bd, dy, dm, dd, trust sql.NullInt64
+	if err := row.Scan(
+		&d.ID, &qid, &wikiURL, &d.Name,
+		&by, &bm, &bd,
+		&dy, &dm, &dd,
+		&bp, &dp,
+		&bio, &bioFull,
+		&d.Era, &dyn, &family, &branch,
+		&d.Gender, &d.Historicity, &d.IsLiving,
+		&trust, &src,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("person not found: %s", idOrQID)
+		}
+		return nil, fmt.Errorf("scan detail: %w", err)
+	}
+
+	assignNullStr := func(out **string, v sql.NullString) {
+		if v.Valid && v.String != "" {
+			s := v.String
+			*out = &s
+		}
+	}
+	assignNullStr(&d.WikidataQID, qid)
+	assignNullStr(&d.WikipediaVIURL, wikiURL)
+	assignNullStr(&d.BirthPlace, bp)
+	assignNullStr(&d.DeathPlace, dp)
+	assignNullStr(&d.BioShort, bio)
+	assignNullStr(&d.BioFull, bioFull)
+	assignNullStr(&d.Dynasty, dyn)
+	assignNullStr(&d.FamilyName, family)
+	assignNullStr(&d.LineageBranch, branch)
+	assignNullStr(&d.PrimarySource, src)
+
+	assignNullInt := func(out **int, v sql.NullInt64) {
+		if v.Valid {
+			n := int(v.Int64)
+			*out = &n
+		}
+	}
+	assignNullInt(&d.BirthYear, by)
+	assignNullInt(&d.BirthMonth, bm)
+	assignNullInt(&d.BirthDay, bd)
+	assignNullInt(&d.DeathYear, dy)
+	assignNullInt(&d.DeathMonth, dm)
+	assignNullInt(&d.DeathDay, dd)
+	if trust.Valid {
+		d.TrustScore = int(trust.Int64)
+	}
+
+	if d.WikidataQID != nil {
+		d.SourceBadges = append(d.SourceBadges, "wikidata")
+	}
+	if d.PrimarySource != nil &&
+		(strings.HasPrefix(*d.PrimarySource, "https://vi.wikipedia") ||
+			*d.PrimarySource == "wikipedia_vi") {
+		d.SourceBadges = append(d.SourceBadges, "wikipedia")
+	}
+
+	// Alt names
+	nameRows, err := s.db.QueryContext(ctx,
+		`SELECT name, kind FROM name WHERE person_id::VARCHAR = ? ORDER BY kind`,
+		d.ID)
+	if err != nil {
+		return nil, fmt.Errorf("alt names: %w", err)
+	}
+	defer nameRows.Close()
+	for nameRows.Next() {
+		var an AltName
+		if err := nameRows.Scan(&an.Name, &an.Kind); err != nil {
+			return nil, err
+		}
+		if an.Name == d.Name {
+			continue
+		}
+		d.AltNames = append(d.AltNames, an)
+	}
+
+	// Counts: 1-hop direct relations
+	row1 := s.db.QueryRowContext(ctx, `
+		SELECT
+		    SUM(CASE WHEN kind LIKE 'parent_%' AND from_person_id::VARCHAR = ? THEN 1 ELSE 0 END) AS parents,
+		    SUM(CASE WHEN (kind LIKE 'parent_%' AND to_person_id::VARCHAR = ?)
+		             OR  (kind LIKE 'child_%'  AND from_person_id::VARCHAR = ?) THEN 1 ELSE 0 END) AS children,
+		    SUM(CASE WHEN kind IN ('spouse','concubine')
+		             AND (from_person_id::VARCHAR = ? OR to_person_id::VARCHAR = ?) THEN 1 ELSE 0 END) AS spouses,
+		    SUM(CASE WHEN kind LIKE 'sibling_%'
+		             AND (from_person_id::VARCHAR = ? OR to_person_id::VARCHAR = ?) THEN 1 ELSE 0 END) AS siblings
+		FROM relation
+	`, d.ID, d.ID, d.ID, d.ID, d.ID, d.ID, d.ID)
+	var pCount, cCount, sCount, sibCount sql.NullInt64
+	if err := row1.Scan(&pCount, &cCount, &sCount, &sibCount); err == nil {
+		d.ParentCount = int(pCount.Int64)
+		d.ChildCount = int(cCount.Int64)
+		d.SpouseCount = int(sCount.Int64)
+		d.SiblingCount = int(sibCount.Int64)
+	}
+
+	// Recursive ancestor + descendant counts up to 4/3 generations
+	if r := s.db.QueryRowContext(ctx, `
+		WITH RECURSIVE up AS (
+			SELECT id::VARCHAR AS id, 0 AS depth FROM person WHERE id::VARCHAR = ?
+			UNION ALL
+			SELECT par.id::VARCHAR, up.depth + 1
+			FROM up
+			JOIN v_parents vp ON vp.person_id::VARCHAR = up.id
+			JOIN person par ON par.id = vp.parent_id
+			WHERE up.depth < 4
+		)
+		SELECT COUNT(*) - 1 FROM up
+	`, d.ID); r != nil {
+		var n sql.NullInt64
+		_ = r.Scan(&n)
+		d.AncestorCount = int(n.Int64)
+	}
+	if r := s.db.QueryRowContext(ctx, `
+		WITH RECURSIVE down AS (
+			SELECT id::VARCHAR AS id, 0 AS depth FROM person WHERE id::VARCHAR = ?
+			UNION ALL
+			SELECT ch.child_id::VARCHAR, down.depth + 1
+			FROM down
+			JOIN v_children ch ON ch.person_id::VARCHAR = down.id
+			WHERE down.depth < 3
+		)
+		SELECT COUNT(DISTINCT id) - 1 FROM down
+	`, d.ID); r != nil {
+		var n sql.NullInt64
+		_ = r.Scan(&n)
+		d.DescendantCount = int(n.Int64)
+	}
+
+	return &d, nil
 }
 
 func (s *Store) collectSiblings(ctx context.Context, egoID string) ([]TreeEdge, error) {

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/sonpiaz/wikipath/internal/store"
@@ -29,7 +30,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/search", handleSearch(st))
-	mux.HandleFunc("/api/p/", handleTree(st))
+	mux.HandleFunc("/api/p/", routeUnderP(st))
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ok"))
 	})
@@ -68,14 +69,30 @@ func handleSearch(st *store.Store) http.HandlerFunc {
 	}
 }
 
+// routeUnderP dispatches:
+//   GET /api/p/<id>           -> handleTree
+//   GET /api/p/<id>/details   -> handleDetail
+func routeUnderP(st *store.Store) http.HandlerFunc {
+	tree := handleTree(st)
+	detail := handleDetail(st)
+	return func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path[len("/api/p/"):]
+		path = strings.TrimRight(path, "/")
+		if strings.HasSuffix(path, "/details") {
+			detail(w, r)
+			return
+		}
+		tree(w, r)
+	}
+}
+
 func handleTree(st *store.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		// path: /api/p/<id-or-qid>
-		id := r.URL.Path[len("/api/p/"):]
+		id := strings.TrimRight(r.URL.Path[len("/api/p/"):], "/")
 		if id == "" {
 			http.Error(w, "id required", http.StatusBadRequest)
 			return
@@ -91,6 +108,31 @@ func handleTree(st *store.Store) http.HandlerFunc {
 			return
 		}
 		writeJSON(w, http.StatusOK, tree)
+	}
+}
+
+func handleDetail(st *store.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		// path: /api/p/<id>/details
+		path := r.URL.Path[len("/api/p/"):]
+		id := strings.TrimSuffix(path, "/details")
+		if id == "" {
+			http.Error(w, "id required", http.StatusBadRequest)
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+		defer cancel()
+		detail, err := st.GetPersonDetail(ctx, id)
+		if err != nil {
+			log.Printf("detail %q: %v", id, err)
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, detail)
 	}
 }
 

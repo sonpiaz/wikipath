@@ -72,3 +72,46 @@ export async function getTree(
   if (!res.ok) throw new Error(`tree failed: ${res.status}`);
   return res.json();
 }
+
+export type AltName = { name: string; kind: string };
+
+export type PersonDetail = {
+  id: string;
+  wikidata_qid?: string;
+  wikipedia_vi_url?: string;
+  name: string;
+  birth_year?: number;
+  birth_month?: number;
+  birth_day?: number;
+  death_year?: number;
+  death_month?: number;
+  death_day?: number;
+  birth_place?: string;
+  death_place?: string;
+  bio_short?: string;
+  bio_full?: string;
+  era: string;
+  dynasty?: string;
+  family_name?: string;
+  lineage_branch?: string;
+  gender: string;
+  historicity: string;
+  is_living: boolean;
+  trust_score: number;
+  primary_source?: string;
+  source_badges: string[];
+  alt_names: AltName[];
+  parent_count: number;
+  spouse_count: number;
+  child_count: number;
+  sibling_count: number;
+  ancestor_count_4_gen: number;
+  descendant_count_3_gen: number;
+};
+
+export async function getPersonDetail(id: string): Promise<PersonDetail> {
+  const url = new URL(`/api/p/${encodeURIComponent(id)}/details`, BASE);
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error(`detail failed: ${res.status}`);
+  return res.json();
+}

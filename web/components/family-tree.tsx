@@ -1,19 +1,20 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ReactFlow,
   Background,
   Controls,
   type Edge,
   type Node,
+  type NodeMouseHandler,
   Position,
   Handle,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { Tree, TreeEdge, TreeNode } from "@/lib/api";
+import { PersonModal } from "@/components/person-modal";
 
 // ─────────── Era / dynasty palette ───────────
 
@@ -222,6 +223,7 @@ function placeRow(
 type FlowNodeData = {
   node: Positioned;
   isEgo: boolean;
+  modalId: string;
 };
 
 function PersonNode({ data }: { data: FlowNodeData }) {
@@ -233,16 +235,14 @@ function PersonNode({ data }: { data: FlowNodeData }) {
   const eraColor = node.dynasty
     ? ERA_COLOR[node.dynasty]
     : "var(--color-muted-foreground)";
-  const href = `/p/${encodeURIComponent(node.wikidata_qid || node.id)}`;
 
   return (
     <>
       <Handle type="target" position={Position.Top} className="!opacity-0" />
-      <Link
-        href={href}
+      <div
         className={cn(
-          "block rounded-lg border bg-card text-card-foreground shadow-sm transition",
-          "px-3 py-2 hover:shadow-md hover:border-foreground/30",
+          "rounded-lg border bg-card text-card-foreground shadow-sm transition",
+          "px-3 py-2 hover:shadow-md hover:border-foreground/30 cursor-pointer",
           isEgo
             ? "border-primary/60 ring-2 ring-primary/30 scale-110"
             : "border-border",
@@ -277,7 +277,7 @@ function PersonNode({ data }: { data: FlowNodeData }) {
             {years}
           </div>
         )}
-      </Link>
+      </div>
       <Handle type="source" position={Position.Bottom} className="!opacity-0" />
     </>
   );
@@ -359,13 +359,23 @@ function buildEdges(edges: TreeEdge[]): Edge[] {
 // ─────────── Component ───────────
 
 export function FamilyTree({ tree }: { tree: Tree }) {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const open = openId !== null;
+
+  // Resolve clicked id into the canonical wikidata-or-uuid for the modal API call.
+  // The button's onClick already passes the right id (qid if present, else uuid).
+
   const { nodes, edges } = useMemo(() => {
     const positioned = layout(tree.ego, tree.nodes, tree.edges);
     const flowNodes: Node[] = positioned.map((p) => ({
       id: p.id,
       type: "person",
       position: { x: p.x, y: p.y },
-      data: { node: p, isEgo: p.id === tree.ego },
+      data: {
+        node: p,
+        isEgo: p.id === tree.ego,
+        modalId: p.wikidata_qid || p.id,
+      },
       width: NODE_WIDTH,
       height: NODE_HEIGHT,
     }));
@@ -373,27 +383,47 @@ export function FamilyTree({ tree }: { tree: Tree }) {
     return { nodes: flowNodes, edges: flowEdges };
   }, [tree]);
 
+  // Identify ego's qid-or-id for "isCurrentEgo" check
+  const egoNode = tree.nodes.find((n) => n.id === tree.ego);
+  const egoIdForModal = egoNode?.wikidata_qid || tree.ego;
+
+  const handleNodeClick = useCallback<NodeMouseHandler>((_, node) => {
+    const data = node.data as FlowNodeData;
+    setOpenId(data.modalId);
+  }, []);
+
   return (
-    <div className="bg-card overflow-hidden w-full h-full">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.3, minZoom: 0.6, maxZoom: 1 }}
-        minZoom={0.3}
-        maxZoom={1.5}
-        nodesDraggable={false}
-        nodesConnectable={false}
-        elementsSelectable={false}
-        proOptions={{ hideAttribution: true }}
-      >
-        <Background color="var(--color-border)" gap={24} size={1} />
-        <Controls
-          showInteractive={false}
-          className="!bg-card !border-border [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-foreground"
-        />
-      </ReactFlow>
-    </div>
+    <>
+      <div className="bg-card overflow-hidden w-full h-full">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          onNodeClick={handleNodeClick}
+          fitView
+          fitViewOptions={{ padding: 0.3, minZoom: 0.6, maxZoom: 1 }}
+          minZoom={0.3}
+          maxZoom={1.5}
+          nodesDraggable={false}
+          nodesConnectable={false}
+          elementsSelectable={false}
+          proOptions={{ hideAttribution: true }}
+        >
+          <Background color="var(--color-border)" gap={24} size={1} />
+          <Controls
+            showInteractive={false}
+            className="!bg-card !border-border [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-foreground"
+          />
+        </ReactFlow>
+      </div>
+      <PersonModal
+        open={open}
+        onOpenChange={(o) => {
+          if (!o) setOpenId(null);
+        }}
+        personId={openId}
+        isCurrentEgo={openId === egoIdForModal}
+      />
+    </>
   );
 }

@@ -1,0 +1,154 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Literal font names so @theme inline resolves at parse time.
+     Runtime CSS vars (--font-sans, --font-serif, --font-mono) are
+     injected by next/font on <html> but @theme can't see them. */
+  --font-sans: "Be Vietnam Pro", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Lora", "Source Serif", "Iowan Old Style", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+  --font-heading: var(--font-serif);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* Era badge palette (used by tree node component) */
+  --color-era-ly: oklch(0.78 0.13 75);          /* gold */
+  --color-era-tran: oklch(0.55 0.20 25);        /* red */
+  --color-era-le: oklch(0.50 0.13 240);         /* blue */
+  --color-era-mac: oklch(0.50 0.18 320);        /* purple */
+  --color-era-trinh: oklch(0.55 0.13 145);      /* green */
+  --color-era-tay-son: oklch(0.65 0.17 50);     /* orange */
+  --color-era-nguyen: oklch(0.75 0.15 90);      /* yellow */
+  --color-era-hien-dai: oklch(0.55 0.04 240);   /* slate */
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* Light: cream/ivory — gợi giấy gia phả cũ */
+:root {
+  --background: oklch(0.972 0.011 86);     /* ~#faf6ee */
+  --foreground: oklch(0.18 0.012 60);
+  --card: oklch(0.985 0.008 86);
+  --card-foreground: oklch(0.18 0.012 60);
+  --popover: oklch(0.985 0.008 86);
+  --popover-foreground: oklch(0.18 0.012 60);
+  --primary: oklch(0.36 0.10 30);          /* sepia red, đậm */
+  --primary-foreground: oklch(0.97 0.01 90);
+  --secondary: oklch(0.93 0.012 86);
+  --secondary-foreground: oklch(0.20 0.012 60);
+  --muted: oklch(0.93 0.012 86);
+  --muted-foreground: oklch(0.48 0.018 80);
+  --accent: oklch(0.92 0.025 70);
+  --accent-foreground: oklch(0.22 0.012 60);
+  --destructive: oklch(0.55 0.20 25);
+  --border: oklch(0.86 0.015 80);
+  --input: oklch(0.88 0.015 80);
+  --ring: oklch(0.55 0.10 60);
+  --chart-1: oklch(0.65 0.18 65);
+  --chart-2: oklch(0.55 0.13 145);
+  --chart-3: oklch(0.50 0.13 240);
+  --chart-4: oklch(0.50 0.18 320);
+  --chart-5: oklch(0.55 0.20 25);
+  --radius: 0.5rem;
+  --sidebar: oklch(0.96 0.013 86);
+  --sidebar-foreground: oklch(0.18 0.012 60);
+  --sidebar-primary: oklch(0.36 0.10 30);
+  --sidebar-primary-foreground: oklch(0.97 0.01 90);
+  --sidebar-accent: oklch(0.92 0.025 70);
+  --sidebar-accent-foreground: oklch(0.22 0.012 60);
+  --sidebar-border: oklch(0.86 0.015 80);
+  --sidebar-ring: oklch(0.55 0.10 60);
+}
+
+/* Dark: warm-near-black */
+.dark {
+  --background: oklch(0.135 0.008 70);     /* ~#0e0c0a */
+  --foreground: oklch(0.96 0.012 86);
+  --card: oklch(0.18 0.010 70);
+  --card-foreground: oklch(0.96 0.012 86);
+  --popover: oklch(0.18 0.010 70);
+  --popover-foreground: oklch(0.96 0.012 86);
+  --primary: oklch(0.85 0.12 75);          /* warm gold */
+  --primary-foreground: oklch(0.18 0.012 70);
+  --secondary: oklch(0.24 0.012 70);
+  --secondary-foreground: oklch(0.96 0.012 86);
+  --muted: oklch(0.24 0.012 70);
+  --muted-foreground: oklch(0.68 0.015 80);
+  --accent: oklch(0.30 0.025 70);
+  --accent-foreground: oklch(0.96 0.012 86);
+  --destructive: oklch(0.65 0.18 25);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.55 0.08 80);
+  --chart-1: oklch(0.78 0.15 75);
+  --chart-2: oklch(0.62 0.13 145);
+  --chart-3: oklch(0.58 0.14 240);
+  --chart-4: oklch(0.58 0.16 320);
+  --chart-5: oklch(0.65 0.18 25);
+  --sidebar: oklch(0.18 0.010 70);
+  --sidebar-foreground: oklch(0.96 0.012 86);
+  --sidebar-primary: oklch(0.85 0.12 75);
+  --sidebar-primary-foreground: oklch(0.18 0.012 70);
+  --sidebar-accent: oklch(0.30 0.025 70);
+  --sidebar-accent-foreground: oklch(0.96 0.012 86);
+  --sidebar-border: oklch(1 0 0 / 9%);
+  --sidebar-ring: oklch(0.55 0.08 80);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+  /* Names rendered with serif by default */
+  .font-name {
+    font-family: var(--font-serif);
+    font-feature-settings: "ss01", "kern";
+  }
+}

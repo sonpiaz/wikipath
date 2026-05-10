@@ -1,0 +1,19 @@
+# Wikipedia VN titles to enrich via LLM (bio_short, bio_full, family relations).
+# Mix of: figures with no infobox (HCM, PVĐ, LĐT) + modern leaders + cultural icons.
+# Comments and blank lines ignored.
+
+Hồ Chí Minh
+Phạm Văn Đồng
+Lê Đức Thọ
+Hoàng Hoa Thám
+Trương Tấn Sang
+Nguyễn Tấn Dũng
+Nguyễn Minh Triết
+Trịnh Công Sơn
+Văn Cao
+Phạm Duy
+Đặng Thái Sơn
+Nguyễn Du
+Hồ Xuân Hương
+Nguyễn Trãi
+Lê Quý Đôn

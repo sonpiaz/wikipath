@@ -374,13 +374,13 @@ export function FamilyTree({ tree }: { tree: Tree }) {
   }, [tree]);
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden h-[640px]">
+    <div className="bg-card overflow-hidden w-full h-full">
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
-        fitViewOptions={{ padding: 0.2 }}
+        fitViewOptions={{ padding: 0.3, minZoom: 0.6, maxZoom: 1 }}
         minZoom={0.3}
         maxZoom={1.5}
         nodesDraggable={false}

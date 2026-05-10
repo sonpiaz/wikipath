@@ -37,9 +37,8 @@ export default async function PersonPage({ params }: PageProps) {
   const ego = tree.nodes.find((n) => n.id === tree.ego);
   if (!ego) notFound();
 
-  const totalRelations = tree.edges.length;
-  const ancestors = tree.edges.filter((e) =>
-    e.kind.startsWith("parent_") && e.from === ego.id,
+  const ancestors = tree.edges.filter(
+    (e) => e.kind.startsWith("parent_") && e.from === ego.id,
   ).length;
   const descendants = tree.edges.filter(
     (e) => e.kind.startsWith("parent_") && e.to === ego.id,
@@ -51,67 +50,69 @@ export default async function PersonPage({ params }: PageProps) {
     e.kind.startsWith("sibling_"),
   ).length;
 
+  const yearRange = [
+    ego.birth_year && `${ego.birth_year}`,
+    ego.death_year && `${ego.death_year}`,
+  ]
+    .filter(Boolean)
+    .join("–");
+  const era = ego.dynasty
+    ? DYNASTY_LABEL[ego.dynasty] || ego.dynasty
+    : ERA_LABEL[ego.era] || ego.era;
+
   return (
-    <main className="flex-1 flex flex-col">
-      <header className="border-b border-border">
-        <div className="mx-auto max-w-5xl px-6 py-4 flex items-center justify-between text-sm">
-          <Link href="/" className="font-name text-lg">
+    <main className="flex-1 flex flex-col min-h-0">
+      <header className="border-b border-border bg-card/40 backdrop-blur-sm">
+        <div className="px-4 md:px-6 py-2.5 flex items-center justify-between gap-4 text-sm">
+          <Link href="/" className="font-name text-base shrink-0">
             wikipath
           </Link>
-          <Link href="/" className="text-muted-foreground hover:text-foreground">
+          <div className="hidden md:flex items-baseline gap-3 flex-1 justify-center min-w-0">
+            <span className="font-name text-lg truncate">{ego.name}</span>
+            <span className="text-muted-foreground text-xs tabular-nums shrink-0">
+              {yearRange}
+            </span>
+            <span className="text-muted-foreground text-xs shrink-0">·</span>
+            <span className="text-muted-foreground text-xs shrink-0">{era}</span>
+          </div>
+          <Link
+            href="/"
+            className="text-muted-foreground hover:text-foreground shrink-0"
+          >
             ← Tìm người khác
           </Link>
         </div>
+
+        {/* Mobile: ego header stacked below */}
+        <div className="md:hidden px-4 pb-2 flex items-baseline gap-2 text-sm">
+          <span className="font-name text-base truncate">{ego.name}</span>
+          <span className="text-muted-foreground text-xs tabular-nums">
+            {yearRange}
+          </span>
+          <span className="text-muted-foreground text-xs">· {era}</span>
+        </div>
+
+        {/* Quick-stat chips */}
+        <div className="px-4 md:px-6 pb-2.5 flex items-center gap-3 text-xs text-muted-foreground overflow-x-auto">
+          <Chip>{ancestors} cha mẹ + tổ tiên</Chip>
+          <Chip>{spouses} vợ chồng</Chip>
+          <Chip>{siblings} anh chị em</Chip>
+          <Chip>{descendants} con cháu</Chip>
+          <Chip>{tree.nodes.length} người trong cây</Chip>
+        </div>
       </header>
 
-      <section className="mx-auto max-w-5xl w-full px-6 py-10 space-y-8">
-        <div className="space-y-3">
-          <h1 className="font-name text-4xl md:text-5xl tracking-tight">
-            {ego.name}
-          </h1>
-          <p className="text-muted-foreground">
-            {[
-              ego.birth_year && `${ego.birth_year}`,
-              ego.death_year && `– ${ego.death_year}`,
-            ]
-              .filter(Boolean)
-              .join(" ")}{" "}
-            ·{" "}
-            {ego.dynasty
-              ? DYNASTY_LABEL[ego.dynasty] || ego.dynasty
-              : ERA_LABEL[ego.era] || ego.era}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Stat label="Tổng quan hệ" value={totalRelations} />
-          <Stat label="Cha mẹ + tổ tiên (4 đời)" value={ancestors} />
-          <Stat label="Vợ chồng" value={spouses} />
-          <Stat label="Anh chị em" value={siblings} />
-          <Stat label="Con cháu (3 đời)" value={descendants} />
-          <Stat label="Người trong cây" value={tree.nodes.length} />
-        </div>
-
+      <div className="flex-1 min-h-0">
         <FamilyTree tree={tree} />
-
-        <details className="text-xs">
-          <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-            Raw tree JSON ({tree.nodes.length} nodes / {tree.edges.length} edges)
-          </summary>
-          <pre className="mt-3 rounded-lg bg-muted p-4 font-mono text-[11px] overflow-x-auto">
-            {JSON.stringify(tree, null, 2)}
-          </pre>
-        </details>
-      </section>
+      </div>
     </main>
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function Chip({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="text-2xl font-name tabular-nums">{value}</div>
-      <div className="text-xs text-muted-foreground mt-1">{label}</div>
-    </div>
+    <span className="rounded-full border border-border bg-background/60 px-2.5 py-0.5 whitespace-nowrap">
+      {children}
+    </span>
   );
 }

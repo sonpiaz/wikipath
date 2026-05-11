@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sonpiaz/wikipath/internal/store"
+	"github.com/start01/wikipath/internal/store"
 )
 
 func main() {
@@ -28,9 +28,16 @@ func main() {
 	}
 	defer st.Close()
 
+	limiter := newSessionLimiter()
+	trendCache := newTrendingCache()
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/search", handleSearch(st))
 	mux.HandleFunc("/api/p/", routeUnderP(st))
+	mux.HandleFunc("/api/event", handleEvent(st, limiter))
+	mux.HandleFunc("/api/trending", handleTrending(st, trendCache))
+	mux.HandleFunc("/api/admin/popularity", handleAdminPopularity(st))
+	mux.HandleFunc("/api/path", handlePath(st))
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ok"))
 	})
@@ -111,6 +118,31 @@ func handleTree(st *store.Store) http.HandlerFunc {
 	}
 }
 
+func handlePath(st *store.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		from := r.URL.Query().Get("from")
+		to := r.URL.Query().Get("to")
+		if from == "" || to == "" {
+			http.Error(w, "from + to required", http.StatusBadRequest)
+			return
+		}
+		maxDepth := parseIntDefault(r.URL.Query().Get("max"), 8)
+		ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
+		defer cancel()
+		p, err := st.FindPath(ctx, from, to, maxDepth)
+		if err != nil {
+			log.Printf("path %s->%s: %v", from, to, err)
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, p)
+	}
+}
+
 func handleDetail(st *store.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
@@ -158,7 +190,8 @@ func writeJSON(w http.ResponseWriter, status int, body any) {
 func withCORS(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return

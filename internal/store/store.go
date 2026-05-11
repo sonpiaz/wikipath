@@ -15,7 +15,11 @@ type Store struct {
 }
 
 func Open(path string) (*Store, error) {
-	db, err := sql.Open("duckdb", path+"?access_mode=read_only")
+	// Read-write so the API can also persist analytics events (F8). Python
+	// batch jobs (enrichment, image import) require the API to be stopped
+	// — same constraint as a read-only handle since DuckDB serializes file
+	// locks across processes regardless of access mode.
+	db, err := sql.Open("duckdb", path+"?access_mode=read_write")
 	if err != nil {
 		return nil, fmt.Errorf("open duckdb: %w", err)
 	}
@@ -38,6 +42,7 @@ type Suggestion struct {
 	DeathYear     *int     `json:"death_year,omitempty"`
 	BirthPlace    *string  `json:"birth_place,omitempty"`
 	BioShort      *string  `json:"bio_short,omitempty"`
+	AvatarURL     *string  `json:"avatar_url,omitempty"`
 	Era           string   `json:"era"`
 	Dynasty       *string  `json:"dynasty,omitempty"`
 	Lineage       *string  `json:"lineage,omitempty"`
@@ -102,7 +107,7 @@ func (s *Store) Search(ctx context.Context, q string, limit int) (*SearchResult,
 		sqlQ = `
 			SELECT id::VARCHAR, wikidata_qid, birth_name,
 			       birth_date_y, death_date_y,
-			       birth_place, bio_short,
+			       birth_place, bio_short, avatar_url,
 			       era, dynasty, current_family_name, lineage_branch,
 			       trust_score, primary_source
 			FROM person
@@ -124,7 +129,7 @@ func (s *Store) Search(ctx context.Context, q string, limit int) (*SearchResult,
 			)
 			SELECT p.id::VARCHAR, p.wikidata_qid, p.birth_name,
 			       p.birth_date_y, p.death_date_y,
-			       p.birth_place, p.bio_short,
+			       p.birth_place, p.bio_short, p.avatar_url,
 			       p.era, p.dynasty, p.current_family_name, p.lineage_branch,
 			       p.trust_score, p.primary_source
 			FROM person p
@@ -148,16 +153,20 @@ func (s *Store) Search(ctx context.Context, q string, limit int) (*SearchResult,
 	res := &SearchResult{Q: q, Verified: []Suggestion{}, Community: []Suggestion{}}
 	for rows.Next() {
 		sug := Suggestion{SourceBadges: []string{}}
-		var qid, bp, bio, dyn, family, branch, src sql.NullString
+		var qid, bp, bio, avatar, dyn, family, branch, src sql.NullString
 		var by, dy, trust sql.NullInt64
 		if err := rows.Scan(
 			&sug.ID, &qid, &sug.Name,
 			&by, &dy,
-			&bp, &bio,
+			&bp, &bio, &avatar,
 			&sug.Era, &dyn, &family, &branch,
 			&trust, &src,
 		); err != nil {
 			return nil, fmt.Errorf("scan: %w", err)
+		}
+		if avatar.Valid && avatar.String != "" {
+			v := avatar.String
+			sug.AvatarURL = &v
 		}
 		if qid.Valid {
 			v := qid.String
@@ -227,6 +236,7 @@ type TreeNode struct {
 	Era         string  `json:"era"`
 	Dynasty     *string `json:"dynasty,omitempty"`
 	Gender      string  `json:"gender"`
+	AvatarURL   *string `json:"avatar_url,omitempty"`
 }
 
 type TreeEdge struct {
@@ -258,6 +268,7 @@ type PersonDetail struct {
 	DeathPlace      *string  `json:"death_place,omitempty"`
 	BioShort        *string  `json:"bio_short,omitempty"`
 	BioFull         *string  `json:"bio_full,omitempty"`
+	AvatarURL       *string  `json:"avatar_url,omitempty"`
 	Era             string   `json:"era"`
 	Dynasty         *string  `json:"dynasty,omitempty"`
 	FamilyName      *string  `json:"family_name,omitempty"`
@@ -403,13 +414,13 @@ func (s *Store) loadAndAddNode(ctx context.Context, id string, t *Tree, seen map
 	}
 	row := s.db.QueryRowContext(ctx, `
 		SELECT id::VARCHAR, birth_name, wikidata_qid,
-		       birth_date_y, death_date_y, era, dynasty, gender
+		       birth_date_y, death_date_y, era, dynasty, gender, avatar_url
 		FROM person WHERE id::VARCHAR = ?
 	`, id)
 	var n TreeNode
-	var qid, dyn sql.NullString
+	var qid, dyn, avatar sql.NullString
 	var by, dy sql.NullInt64
-	if err := row.Scan(&n.ID, &n.Name, &qid, &by, &dy, &n.Era, &dyn, &n.Gender); err != nil {
+	if err := row.Scan(&n.ID, &n.Name, &qid, &by, &dy, &n.Era, &dyn, &n.Gender, &avatar); err != nil {
 		if err == sql.ErrNoRows {
 			return nil
 		}
@@ -430,6 +441,10 @@ func (s *Store) loadAndAddNode(ctx context.Context, id string, t *Tree, seen map
 	if dyn.Valid {
 		v := dyn.String
 		n.Dynasty = &v
+	}
+	if avatar.Valid && avatar.String != "" {
+		v := avatar.String
+		n.AvatarURL = &v
 	}
 	t.Nodes = append(t.Nodes, n)
 	seen[id] = true
@@ -568,7 +583,7 @@ func (s *Store) GetPersonDetail(ctx context.Context, idOrQID string) (*PersonDet
 		       birth_date_y, birth_date_m, birth_date_d,
 		       death_date_y, death_date_m, death_date_d,
 		       birth_place, death_place,
-		       bio_short, bio_full,
+		       bio_short, bio_full, avatar_url,
 		       era, dynasty, current_family_name, lineage_branch,
 		       gender, historicity, is_living,
 		       trust_score, primary_source
@@ -580,14 +595,14 @@ func (s *Store) GetPersonDetail(ctx context.Context, idOrQID string) (*PersonDet
 	var d PersonDetail
 	d.SourceBadges = []string{}
 	d.AltNames = []AltName{}
-	var qid, wikiURL, bp, dp, bio, bioFull, dyn, family, branch, src sql.NullString
+	var qid, wikiURL, bp, dp, bio, bioFull, avatar, dyn, family, branch, src sql.NullString
 	var by, bm, bd, dy, dm, dd, trust sql.NullInt64
 	if err := row.Scan(
 		&d.ID, &qid, &wikiURL, &d.Name,
 		&by, &bm, &bd,
 		&dy, &dm, &dd,
 		&bp, &dp,
-		&bio, &bioFull,
+		&bio, &bioFull, &avatar,
 		&d.Era, &dyn, &family, &branch,
 		&d.Gender, &d.Historicity, &d.IsLiving,
 		&trust, &src,
@@ -610,6 +625,7 @@ func (s *Store) GetPersonDetail(ctx context.Context, idOrQID string) (*PersonDet
 	assignNullStr(&d.DeathPlace, dp)
 	assignNullStr(&d.BioShort, bio)
 	assignNullStr(&d.BioFull, bioFull)
+	assignNullStr(&d.AvatarURL, avatar)
 	assignNullStr(&d.Dynasty, dyn)
 	assignNullStr(&d.FamilyName, family)
 	assignNullStr(&d.LineageBranch, branch)

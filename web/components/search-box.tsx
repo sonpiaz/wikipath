@@ -92,13 +92,13 @@ export function SearchBox() {
   return (
     <Command
       shouldFilter={false}
-      className="rounded-xl border border-border bg-card shadow-sm overflow-visible"
+      className="!h-auto !size-auto w-full rounded-2xl border border-border bg-card/60 backdrop-blur-sm shadow-[0_1px_3px_rgba(0,0,0,0.4)] overflow-visible"
     >
       <CommandInput
         value={q}
         onValueChange={setQ}
         placeholder="Tìm tên (vd: Hồ Chí Minh, Nguyen Phu Trong, Bao Dai)"
-        className="h-12 text-base font-name"
+        className="h-14 text-lg font-name"
       />
       {isOpen && (
         <CommandList className="max-h-[420px]">

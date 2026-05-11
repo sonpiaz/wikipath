@@ -160,3 +160,32 @@ export async function getPath(from: string, to: string, max = 8): Promise<Path> 
   }
   return res.json();
 }
+
+// ─────────── Trending (F8 — landing page) ───────────
+
+export type TrendingItem = {
+  id: string;
+  wikidata_qid?: string;
+  name: string;
+  score: number;
+  views: number;
+  avatar_url?: string;
+};
+
+export type TrendingResponse = {
+  items: TrendingItem[];
+  window_days: number;
+};
+
+export async function getTrending(
+  windowDays = 7,
+  limit = 6,
+): Promise<TrendingResponse> {
+  const url = new URL("/api/trending", BASE);
+  url.searchParams.set("window", String(windowDays));
+  url.searchParams.set("limit", String(limit));
+  // Cache 5 min on server. The Go API has its own 5-min in-memory cache too.
+  const res = await fetch(url, { next: { revalidate: 300 } });
+  if (!res.ok) throw new Error(`trending failed: ${res.status}`);
+  return res.json();
+}

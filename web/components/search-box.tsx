@@ -23,24 +23,7 @@ import { PersonAvatar } from "@/components/person-avatar";
 import { readRecent, type RecentEntry } from "@/lib/recent";
 import { cn } from "@/lib/utils";
 
-const DYNASTY_LABEL: Record<string, string> = {
-  ly: "Nhà Lý",
-  tran: "Nhà Trần",
-  le: "Nhà Hậu Lê",
-  mac: "Nhà Mạc",
-  trinh: "Nhà Trịnh",
-  "tay-son": "Tây Sơn",
-  nguyen: "Nhà Nguyễn",
-  "hien-dai": "Hiện đại",
-};
-
-const ERA_LABEL: Record<string, string> = {
-  "pre-1500": "Trước 1500",
-  "1500-1900": "1500–1900",
-  "1900-1950": "1900–1950",
-  "1950+": "Hiện đại",
-  mythological: "Huyền thoại",
-};
+import { formatEra } from "@/lib/period";
 
 // Curated, diverse pool — keeps placeholder honest (we have all four categories)
 // without becoming a top-N popularity loop. Order is intentionally mixed so
@@ -294,7 +277,7 @@ function SuggestionRow({
   onSelect: () => void;
 }) {
   const years = [s.birth_year, s.death_year].filter(Boolean).join("–");
-  const era = s.dynasty ? DYNASTY_LABEL[s.dynasty] || s.dynasty : ERA_LABEL[s.era] || s.era;
+  const era = formatEra(s.era, s.dynasty, s.birth_year, s.death_year);
   return (
     <CommandItem
       value={`${s.name} ${s.id}`}
@@ -313,19 +296,11 @@ function SuggestionRow({
           </span>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-          <span>{era}</span>
-          {s.lineage && (
-            <>
-              <span>·</span>
-              <span>{s.lineage}</span>
-            </>
-          )}
-          {s.birth_place && (
-            <>
-              <span>·</span>
-              <span>{s.birth_place}</span>
-            </>
-          )}
+          {era && <span>{era}</span>}
+          {era && s.lineage && <span>·</span>}
+          {s.lineage && <span>{s.lineage}</span>}
+          {(era || s.lineage) && s.birth_place && <span>·</span>}
+          {s.birth_place && <span>{s.birth_place}</span>}
         </div>
         {s.bio_short && (
           <div className="text-xs text-muted-foreground line-clamp-1 w-full">

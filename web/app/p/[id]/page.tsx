@@ -5,27 +5,9 @@ import { FamilyTree } from "@/components/family-tree";
 import { SearchBox } from "@/components/search-box";
 import { TrackPageView } from "@/components/track-page-view";
 import { RecordVisit } from "@/components/record-visit";
+import { formatEra } from "@/lib/period";
 
 type PageProps = { params: Promise<{ id: string }> };
-
-const ERA_LABEL: Record<string, string> = {
-  "pre-1500": "Trước 1500",
-  "1500-1900": "1500–1900",
-  "1900-1950": "1900–1950",
-  "1950+": "1950 đến nay",
-  mythological: "Huyền thoại",
-};
-
-const DYNASTY_LABEL: Record<string, string> = {
-  ly: "Nhà Lý",
-  tran: "Nhà Trần",
-  le: "Nhà Hậu Lê",
-  mac: "Nhà Mạc",
-  trinh: "Nhà Trịnh",
-  "tay-son": "Tây Sơn",
-  nguyen: "Nhà Nguyễn",
-  "hien-dai": "Hiện đại",
-};
 
 export default async function PersonPage({ params }: PageProps) {
   const { id } = await params;
@@ -70,9 +52,7 @@ export default async function PersonPage({ params }: PageProps) {
   ]
     .filter(Boolean)
     .join("–");
-  const era = ego.dynasty
-    ? DYNASTY_LABEL[ego.dynasty] || ego.dynasty
-    : ERA_LABEL[ego.era] || ego.era;
+  const era = formatEra(ego.era, ego.dynasty, ego.birth_year, ego.death_year);
 
   return (
     <main className="flex-1 flex flex-col min-h-0">
@@ -100,8 +80,12 @@ export default async function PersonPage({ params }: PageProps) {
             {ego.name}
           </span>
           {yearRange && <span className="tabular-nums">{yearRange}</span>}
-          <span>·</span>
-          <span>{era}</span>
+          {era && (
+            <>
+              <span>·</span>
+              <span>{era}</span>
+            </>
+          )}
           <span className="ml-auto flex items-center gap-2 overflow-x-auto">
             <Chip>{ancestors} cha mẹ + tổ tiên</Chip>
             <Chip>{spouses} vợ chồng</Chip>

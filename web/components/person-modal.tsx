@@ -16,25 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { getPersonDetail, type PersonDetail } from "@/lib/api";
 import { PersonAvatar } from "@/components/person-avatar";
 import { track } from "@/lib/track";
-
-const DYNASTY_LABEL: Record<string, string> = {
-  ly: "Nhà Lý",
-  tran: "Nhà Trần",
-  le: "Nhà Hậu Lê",
-  mac: "Nhà Mạc",
-  trinh: "Nhà Trịnh",
-  "tay-son": "Tây Sơn",
-  nguyen: "Nhà Nguyễn",
-  "hien-dai": "Hiện đại",
-};
-
-const ERA_LABEL: Record<string, string> = {
-  "pre-1500": "Trước 1500",
-  "1500-1900": "1500–1900",
-  "1900-1950": "1900–1950",
-  "1950+": "1950 đến nay",
-  mythological: "Huyền thoại",
-};
+import { formatEra } from "@/lib/period";
 
 const NAME_KIND_LABEL: Record<string, string> = {
   birth: "Tên thật",
@@ -156,9 +138,7 @@ function ModalBody({
   ]
     .filter(Boolean)
     .join("–");
-  const era = d.dynasty
-    ? DYNASTY_LABEL[d.dynasty] || d.dynasty
-    : ERA_LABEL[d.era] || d.era;
+  const era = formatEra(d.era, d.dynasty, d.birth_year, d.death_year);
   const birth = formatDate(d.birth_year, d.birth_month, d.birth_day);
   const death = formatDate(d.death_year, d.death_month, d.death_day);
 

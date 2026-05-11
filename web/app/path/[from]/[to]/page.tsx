@@ -36,7 +36,7 @@ export default async function PathPage({ params }: PageProps) {
 
   return (
     <main className="flex-1 flex flex-col min-h-0">
-      <header className="border-b border-border bg-card/40 backdrop-blur-sm">
+      <header className="relative z-50 border-b border-border bg-card/40 backdrop-blur-sm">
         <div className="px-4 md:px-6 py-2.5 grid grid-cols-[auto_1fr_auto] items-center gap-3 md:gap-4 text-sm">
           <Link href="/" className="font-name text-base">
             wikipath

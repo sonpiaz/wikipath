@@ -78,7 +78,7 @@ export default async function PersonPage({ params }: PageProps) {
     <main className="flex-1 flex flex-col min-h-0">
       <TrackPageView personId={ego.wikidata_qid || ego.id} />
       <RecordVisit id={ego.wikidata_qid || ego.id} name={ego.name} />
-      <header className="border-b border-border bg-card/40 backdrop-blur-sm">
+      <header className="relative z-50 border-b border-border bg-card/40 backdrop-blur-sm">
         {/* 3-col grid keeps the search box truly horizontally centered relative
             to the viewport, not just centered within whatever space the logo
             leaves behind. The "Đề xuất sửa" anchor used to live on the right —

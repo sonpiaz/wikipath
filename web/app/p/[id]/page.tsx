@@ -74,35 +74,23 @@ export default async function PersonPage({ params }: PageProps) {
     ? DYNASTY_LABEL[ego.dynasty] || ego.dynasty
     : ERA_LABEL[ego.era] || ego.era;
 
-  const reportUrl = buildReportUrl({
-    qid: ego.wikidata_qid,
-    id: ego.id,
-    name: ego.name,
-    yearRange,
-  });
-
   return (
     <main className="flex-1 flex flex-col min-h-0">
       <TrackPageView personId={ego.wikidata_qid || ego.id} />
       <RecordVisit id={ego.wikidata_qid || ego.id} name={ego.name} />
       <header className="border-b border-border bg-card/40 backdrop-blur-sm">
-        <div className="px-4 md:px-6 py-2.5 flex items-center gap-3 md:gap-4 text-sm">
-          <Link href="/" className="font-name text-base shrink-0">
+        {/* 3-col grid keeps the search box truly horizontally centered relative
+            to the viewport, not just centered within whatever space the logo
+            leaves behind. The "Đề xuất sửa" anchor used to live on the right —
+            it now belongs to PersonModal's action bar to avoid duplication. */}
+        <div className="px-4 md:px-6 py-2.5 grid grid-cols-[auto_1fr_auto] items-center gap-3 md:gap-4 text-sm">
+          <Link href="/" className="font-name text-base">
             wikipath
           </Link>
-          <div className="flex-1 min-w-0 max-w-xl">
+          <div className="w-full max-w-xl mx-auto min-w-0">
             <SearchBox initialTrending={trending} compact />
           </div>
-          <a
-            href={reportUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-muted-foreground hover:text-foreground shrink-0"
-            title="Mở GitHub issue để đề xuất sửa thông tin / quan hệ"
-          >
-            <span className="hidden sm:inline">✎ Đề xuất sửa</span>
-            <span className="sm:hidden" aria-label="Đề xuất sửa">✎</span>
-          </a>
+          <div aria-hidden className="w-[72px]" />
         </div>
 
         {/* Ego header + stats — wraps onto a second row so the search field
@@ -136,34 +124,4 @@ function Chip({ children }: { children: React.ReactNode }) {
       {children}
     </span>
   );
-}
-
-function buildReportUrl({
-  qid,
-  id,
-  name,
-  yearRange,
-}: {
-  qid?: string;
-  id: string;
-  name: string;
-  yearRange: string;
-}) {
-  const personId = qid || id;
-  const title = `Sửa thông tin: ${name}${qid ? ` (${qid})` : ""}`;
-  const body = `**Trang:** https://wikipath.app/p/${personId}
-**Người:** ${name}${yearRange ? ` (${yearRange})` : ""}
-${qid ? `**Wikidata:** https://www.wikidata.org/wiki/${qid}\n` : ""}
-### Đề xuất sửa
-
-(Mô tả ngắn cái gì sai hoặc thiếu, kèm nguồn — Wikipedia link / sách / báo / Wikidata QID)
-
-### Nếu sửa quan hệ trong cây gia phả
-
-Vd: "Hoàng Thị Loan 1995 không phải mẹ của Nguyễn Sinh Cung; mẹ thật là Hoàng Thị Loan 1868-1901."
-
----
-*Auto-filled từ wikipath. SLA phản hồi 7 ngày — xem [Takedown](https://wikipath.app/takedown).*`;
-
-  return `https://github.com/sonpiaz/wikipath/issues/new?labels=correction&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
 }

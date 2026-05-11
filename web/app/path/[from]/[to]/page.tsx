@@ -37,14 +37,14 @@ export default async function PathPage({ params }: PageProps) {
   return (
     <main className="flex-1 flex flex-col min-h-0">
       <header className="border-b border-border bg-card/40 backdrop-blur-sm">
-        <div className="px-4 md:px-6 py-2.5 flex items-center gap-3 md:gap-4 text-sm">
-          <Link href="/" className="font-name text-base shrink-0">
+        <div className="px-4 md:px-6 py-2.5 grid grid-cols-[auto_1fr_auto] items-center gap-3 md:gap-4 text-sm">
+          <Link href="/" className="font-name text-base">
             wikipath
           </Link>
-          <div className="flex-1 min-w-0 max-w-xl">
+          <div className="w-full max-w-xl mx-auto min-w-0">
             <SearchBox initialTrending={trending} compact />
           </div>
-          <span className="text-muted-foreground text-xs shrink-0 hidden sm:inline">
+          <span className="text-muted-foreground text-xs hidden sm:inline">
             So sánh quan hệ
           </span>
         </div>

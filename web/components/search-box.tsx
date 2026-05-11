@@ -21,6 +21,7 @@ import {
 import { track } from "@/lib/track";
 import { PersonAvatar } from "@/components/person-avatar";
 import { readRecent, type RecentEntry } from "@/lib/recent";
+import { cn } from "@/lib/utils";
 
 const DYNASTY_LABEL: Record<string, string> = {
   ly: "Nhà Lý",
@@ -70,9 +71,11 @@ const PLACEHOLDER_INTERVAL_MS = 2800;
 
 type Props = {
   initialTrending?: TrendingItem[];
+  /** Compact mode for in-page headers (tree page, path page). */
+  compact?: boolean;
 };
 
-export function SearchBox({ initialTrending = [] }: Props) {
+export function SearchBox({ initialTrending = [], compact = false }: Props) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const [q, setQ] = useState("");
@@ -177,20 +180,34 @@ export function SearchBox({ initialTrending = [] }: Props) {
   }
 
   return (
-    <div ref={containerRef}>
+    <div ref={containerRef} className={compact ? "relative" : undefined}>
       <Command
         shouldFilter={false}
-        className="!h-auto !size-auto w-full rounded-2xl border border-border bg-card/60 backdrop-blur-sm shadow-[0_1px_3px_rgba(0,0,0,0.4)] overflow-visible"
+        className={cn(
+          "!h-auto !size-auto w-full border border-border bg-card/60 backdrop-blur-sm overflow-visible",
+          compact
+            ? "rounded-lg shadow-none"
+            : "rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.4)]",
+        )}
       >
         <CommandInput
           value={q}
           onValueChange={setQ}
           onFocus={() => setFocused(true)}
           placeholder={PLACEHOLDER_NAMES[placeholderIdx]}
-          className="h-14 text-lg font-name"
+          className={cn(
+            "font-name",
+            compact ? "h-10 text-sm" : "h-14 text-lg",
+          )}
         />
         {isOpen && (
-          <CommandList className="max-h-[440px]">
+          <CommandList
+            className={cn(
+              compact
+                ? "absolute left-0 right-0 top-full mt-1 max-h-[360px] rounded-lg border border-border bg-card shadow-lg z-50"
+                : "max-h-[440px]",
+            )}
+          >
             {/* === SEARCH RESULTS (when query) === */}
             {showResults && loading && (
               <div className="px-4 py-3 text-sm text-muted-foreground">

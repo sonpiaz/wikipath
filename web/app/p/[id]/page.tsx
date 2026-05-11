@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getTree } from "@/lib/api";
+import { getTree, getTrending, type TrendingItem } from "@/lib/api";
 import { FamilyTree } from "@/components/family-tree";
+import { SearchBox } from "@/components/search-box";
 import { TrackPageView } from "@/components/track-page-view";
 import { RecordVisit } from "@/components/record-visit";
 
@@ -34,6 +35,17 @@ export default async function PersonPage({ params }: PageProps) {
     tree = await getTree(id, 4, 3);
   } catch {
     notFound();
+  }
+
+  // Trending feeds the in-header search dropdown so users can hop directly to
+  // another person without going back to the homepage. Best-effort — ignore on
+  // failure.
+  let trending: TrendingItem[] = [];
+  try {
+    const res = await getTrending(7, 10);
+    trending = res.items;
+  } catch {
+    /* swallow */
   }
 
   const ego = tree.nodes.find((n) => n.id === tree.ego);
@@ -74,55 +86,40 @@ export default async function PersonPage({ params }: PageProps) {
       <TrackPageView personId={ego.wikidata_qid || ego.id} />
       <RecordVisit id={ego.wikidata_qid || ego.id} name={ego.name} />
       <header className="border-b border-border bg-card/40 backdrop-blur-sm">
-        <div className="px-4 md:px-6 py-2.5 flex items-center justify-between gap-4 text-sm">
+        <div className="px-4 md:px-6 py-2.5 flex items-center gap-3 md:gap-4 text-sm">
           <Link href="/" className="font-name text-base shrink-0">
             wikipath
           </Link>
-          <div className="hidden md:flex items-baseline gap-3 flex-1 justify-center min-w-0">
-            <span className="font-name text-lg truncate">{ego.name}</span>
-            <span className="text-muted-foreground text-xs tabular-nums shrink-0">
-              {yearRange}
-            </span>
-            <span className="text-muted-foreground text-xs shrink-0">·</span>
-            <span className="text-muted-foreground text-xs shrink-0">{era}</span>
+          <div className="flex-1 min-w-0 max-w-xl">
+            <SearchBox initialTrending={trending} compact />
           </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <a
-              href={reportUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-foreground"
-              title="Mở GitHub issue để đề xuất sửa thông tin / quan hệ"
-            >
-              <span className="hidden sm:inline">✎ Đề xuất sửa</span>
-              <span className="sm:hidden" aria-label="Đề xuất sửa">✎</span>
-            </a>
-            <Link
-              href="/"
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <span className="hidden sm:inline">← Tìm người khác</span>
-              <span className="sm:hidden" aria-label="Tìm người khác">←</span>
-            </Link>
-          </div>
+          <a
+            href={reportUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted-foreground hover:text-foreground shrink-0"
+            title="Mở GitHub issue để đề xuất sửa thông tin / quan hệ"
+          >
+            <span className="hidden sm:inline">✎ Đề xuất sửa</span>
+            <span className="sm:hidden" aria-label="Đề xuất sửa">✎</span>
+          </a>
         </div>
 
-        {/* Mobile: ego header stacked below */}
-        <div className="md:hidden px-4 pb-2 flex items-baseline gap-2 text-sm">
-          <span className="font-name text-base truncate">{ego.name}</span>
-          <span className="text-muted-foreground text-xs tabular-nums">
-            {yearRange}
+        {/* Ego header + stats — wraps onto a second row so the search field
+            stays roomy on row 1. */}
+        <div className="px-4 md:px-6 pb-2.5 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          <span className="font-name text-sm text-foreground truncate max-w-[60vw] md:max-w-none">
+            {ego.name}
           </span>
-          <span className="text-muted-foreground text-xs">· {era}</span>
-        </div>
-
-        {/* Quick-stat chips */}
-        <div className="px-4 md:px-6 pb-2.5 flex items-center gap-3 text-xs text-muted-foreground overflow-x-auto">
-          <Chip>{ancestors} cha mẹ + tổ tiên</Chip>
-          <Chip>{spouses} vợ chồng</Chip>
-          <Chip>{siblings} anh chị em</Chip>
-          <Chip>{descendants} con cháu</Chip>
-          <Chip>{tree.nodes.length} người trong cây</Chip>
+          {yearRange && <span className="tabular-nums">{yearRange}</span>}
+          <span>·</span>
+          <span>{era}</span>
+          <span className="ml-auto flex items-center gap-2 overflow-x-auto">
+            <Chip>{ancestors} cha mẹ + tổ tiên</Chip>
+            <Chip>{spouses} vợ chồng</Chip>
+            <Chip>{siblings} anh chị em</Chip>
+            <Chip>{descendants} con cháu</Chip>
+          </span>
         </div>
       </header>
 

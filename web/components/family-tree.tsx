@@ -315,6 +315,12 @@ const nodeTypes = { person: PersonNode };
 
 // ─────────── Edge styling ───────────
 
+// EntiTree-style rounded "pipe" connector: orthogonal step with a generous
+// corner radius. The radius must stay below half the row gap (110/2 = 55) AND
+// half the column gap (32/2 = 16) so two adjacent corners don't clobber each
+// other. 14 lands inside both budgets while still reading as a soft curve.
+const EDGE_CORNER_RADIUS = 14;
+
 function buildEdges(edges: TreeEdge[]): Edge[] {
   return edges.map((e, i) => {
     const isParent =
@@ -328,10 +334,15 @@ function buildEdges(edges: TreeEdge[]): Edge[] {
     let strokeWidth = 1.5;
     let strokeDasharray: string | undefined;
     let label: string | undefined;
+    let opacity = 1;
 
     if (isParent) {
+      // Soft gray pipe — distinct from background but not as stark as
+      // foreground. Pairs with rounded corners + thicker stroke for the
+      // EntiTree feel.
       stroke = "var(--color-foreground)";
-      strokeWidth = 1.5;
+      strokeWidth = 2.25;
+      opacity = 0.38;
       if (e.kind === "child_adopted") {
         strokeDasharray = "4 3";
         label = "nuôi";
@@ -342,11 +353,12 @@ function buildEdges(edges: TreeEdge[]): Edge[] {
     } else if (isSpouse) {
       stroke = "var(--color-primary)";
       strokeWidth = 2;
-      // double line via thicker stroke; rank shows in label
+      opacity = 0.75;
       if (e.rank && e.rank > 1) label = `vợ ${e.rank}`;
     } else if (isSibling) {
       stroke = "var(--color-muted-foreground)";
-      strokeWidth = 1;
+      strokeWidth = 1.25;
+      opacity = 0.6;
       if (e.kind === "sibling_paternal") {
         strokeDasharray = "5 4";
         label = "cùng cha";
@@ -356,21 +368,19 @@ function buildEdges(edges: TreeEdge[]): Edge[] {
       }
     }
 
-    // For parent edges, source = child (lower) → target = parent (upper).
-    // React Flow's default 'default' (bezier) draws nicely top-bottom.
-    // Layout direction we use: parent above (lower y), child below.
-    const source = isParent ? e.from : e.from;
-    const target = isParent ? e.to : e.to;
-
     return {
       id: `e-${i}-${e.from.slice(0, 6)}-${e.kind}-${e.to.slice(0, 6)}`,
-      source,
-      target,
+      source: e.from,
+      target: e.to,
       type: isSibling || isSpouse ? "straight" : "smoothstep",
       animated: false,
+      pathOptions: isParent ? { borderRadius: EDGE_CORNER_RADIUS } : undefined,
       style: {
         stroke,
         strokeWidth,
+        opacity,
+        strokeLinecap: "round" as const,
+        strokeLinejoin: "round" as const,
         ...(strokeDasharray ? { strokeDasharray } : {}),
       },
       label,

@@ -68,9 +68,9 @@ export default function HomePage() {
           <div className="flex items-center gap-4">
             <Link href="/about" className="hover:text-foreground">Giới thiệu</Link>
             <span>·</span>
-            <Link href="/about" className="hover:text-foreground">Privacy</Link>
+            <Link href="/privacy" className="hover:text-foreground">Privacy</Link>
             <span>·</span>
-            <Link href="/about" className="hover:text-foreground">Takedown</Link>
+            <Link href="/takedown" className="hover:text-foreground">Takedown</Link>
           </div>
         </div>
       </footer>

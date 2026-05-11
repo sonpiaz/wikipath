@@ -240,6 +240,7 @@ type TreeNode struct {
 	Dynasty     *string `json:"dynasty,omitempty"`
 	Gender      string  `json:"gender"`
 	AvatarURL   *string `json:"avatar_url,omitempty"`
+	BioShort    *string `json:"bio_short,omitempty"`
 }
 
 type TreeEdge struct {
@@ -435,15 +436,15 @@ func (s *Store) loadAndAddNode(ctx context.Context, id string, t *Tree, seen map
 	}
 	row := s.db.QueryRowContext(ctx, `
 		SELECT id::VARCHAR, birth_name, wikidata_qid,
-		       birth_date_y, death_date_y, era, dynasty, gender, avatar_url
+		       birth_date_y, death_date_y, era, dynasty, gender, avatar_url, bio_short
 		FROM person
 		WHERE id::VARCHAR = ?
 		  AND birth_name IS NOT NULL AND birth_name != '' AND NOT regexp_matches(birth_name, '^Q?[0-9]+$')
 	`, id)
 	var n TreeNode
-	var qid, dyn, avatar sql.NullString
+	var qid, dyn, avatar, bio sql.NullString
 	var by, dy sql.NullInt64
-	if err := row.Scan(&n.ID, &n.Name, &qid, &by, &dy, &n.Era, &dyn, &n.Gender, &avatar); err != nil {
+	if err := row.Scan(&n.ID, &n.Name, &qid, &by, &dy, &n.Era, &dyn, &n.Gender, &avatar, &bio); err != nil {
 		if err == sql.ErrNoRows {
 			// Person exists in DB but has no name yet (Wikidata structural
 			// import without enrichment). Mark as seen so we don't re-query,
@@ -472,6 +473,10 @@ func (s *Store) loadAndAddNode(ctx context.Context, id string, t *Tree, seen map
 	if avatar.Valid && avatar.String != "" {
 		v := avatar.String
 		n.AvatarURL = &v
+	}
+	if bio.Valid && bio.String != "" {
+		v := bio.String
+		n.BioShort = &v
 	}
 	t.Nodes = append(t.Nodes, n)
 	seen[id] = true

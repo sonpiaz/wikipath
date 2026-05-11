@@ -38,6 +38,7 @@ export type TreeNode = {
   dynasty?: string;
   gender: string;
   avatar_url?: string;
+  bio_short?: string;
 };
 
 export type TreeEdge = {

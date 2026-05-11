@@ -44,10 +44,10 @@ const DYNASTY_LABEL: Record<string, string> = {
 
 // ─────────── Layout ───────────
 
-const NODE_WIDTH = 210;
-const NODE_HEIGHT = 82;
-const COL_GAP = 40;
-const ROW_GAP = 90;
+const NODE_WIDTH = 260;
+const NODE_HEIGHT = 100;
+const COL_GAP = 32;
+const ROW_GAP = 110;
 
 type Level = number;
 
@@ -243,10 +243,10 @@ function PersonNode({ data }: { data: FlowNodeData }) {
       <Handle type="target" position={Position.Top} className="!opacity-0" />
       <div
         className={cn(
-          "rounded-lg border bg-card text-card-foreground shadow-sm transition",
-          "px-3 py-2 hover:shadow-md hover:border-foreground/30 cursor-pointer",
+          "rounded-lg border bg-card text-card-foreground transition cursor-pointer",
+          "px-3 py-2.5 hover:bg-accent/30 hover:border-foreground/30",
           isEgo
-            ? "border-primary/60 ring-2 ring-primary/30 scale-110"
+            ? "border-primary/60 ring-2 ring-primary/30"
             : "border-border",
         )}
         style={{
@@ -254,17 +254,21 @@ function PersonNode({ data }: { data: FlowNodeData }) {
           minHeight: NODE_HEIGHT,
         }}
       >
-        <div className="flex items-start gap-2">
+        <div className="flex items-start gap-3 h-full">
+          {/* Photo (square, larger — EntiTree-style) */}
           <PersonAvatar
             src={node.avatar_url}
             name={node.name}
-            sizePx={isEgo ? 40 : 32}
-            className="shrink-0 mt-0.5"
+            sizePx={56}
+            className="shrink-0 !rounded-md"
           />
-          <div className="flex-1 min-w-0">
+
+          {/* Info column */}
+          <div className="flex-1 min-w-0 flex flex-col gap-1">
+            {/* Name + dynasty badge */}
             <div className="flex items-start justify-between gap-1.5">
               <span
-                className="font-name text-sm leading-tight line-clamp-2 flex-1"
+                className="font-name text-sm leading-snug line-clamp-2 flex-1 font-medium"
                 title={node.name}
               >
                 {node.name}
@@ -282,9 +286,21 @@ function PersonNode({ data }: { data: FlowNodeData }) {
                 </span>
               )}
             </div>
+
+            {/* Dates */}
             {years && (
-              <div className="text-[11px] text-muted-foreground tabular-nums mt-0.5">
+              <div className="text-[11px] text-muted-foreground tabular-nums">
                 {years}
+              </div>
+            )}
+
+            {/* Bio short — italic, 1 line, truncate. Mute color so name + dates lead. */}
+            {node.bio_short && (
+              <div
+                className="text-[11px] text-muted-foreground/80 italic leading-snug line-clamp-1"
+                title={node.bio_short}
+              >
+                {node.bio_short}
               </div>
             )}
           </div>

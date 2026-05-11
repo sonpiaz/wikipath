@@ -1,6 +1,28 @@
-/wikipath
-/wikipath-crawl
-/wikipath-serve
-graph.json
+# Build outputs
+/bin/
+/wikipath-api
+
+# Local DuckDB files (compiled artifact; rebuild via scripts/seed_db.py)
+*.duckdb
+*.duckdb.wal
+*.duckdb.tmp
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.python-version
+venv/
+.venv/
+
+# Generated data artifacts
+data/candidates-*.json
+
+# Logs + system
 *.log
 .DS_Store
+.idea/
+.vscode/
+
+# OS
+Thumbs.db

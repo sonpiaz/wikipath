@@ -140,11 +140,18 @@ function computeLevels(
 
 type Positioned = TreeNode & { x: number; y: number; level: Level };
 
+type LayoutResult = {
+  positioned: Positioned[];
+  levels: Map<string, Level>;
+  spouseOf: Set<string>;
+  siblingOf: Set<string>;
+};
+
 function layout(
   egoId: string,
   nodes: TreeNode[],
   edges: TreeEdge[],
-): Positioned[] {
+): LayoutResult {
   const levels = computeLevels(egoId, nodes, edges);
 
   // Group nodes by level
@@ -193,7 +200,7 @@ function layout(
     }
   }
 
-  return positioned;
+  return { positioned, levels, spouseOf, siblingOf };
 }
 
 function byBirthYear(a: TreeNode, b: TreeNode): number {
@@ -222,14 +229,26 @@ function placeRow(
 
 // ─────────── Custom node ───────────
 
+type Direction = "parents" | "children" | "spouses" | "siblings";
+type ShowState = Record<Direction, boolean>;
+type CountsState = Record<Direction, number>;
+
+type EgoControls = {
+  show: ShowState;
+  counts: CountsState;
+  onToggle: (dir: Direction) => void;
+};
+
 type FlowNodeData = {
   node: Positioned;
   isEgo: boolean;
   modalId: string;
+  /** Only present on the ego node. Drives the four chevron badges. */
+  egoControls?: EgoControls;
 };
 
 function PersonNode({ data }: { data: FlowNodeData }) {
-  const { node, isEgo } = data;
+  const { node, isEgo, egoControls } = data;
   const years = [node.birth_year, node.death_year]
     .filter(Boolean)
     .join("–");
@@ -241,6 +260,9 @@ function PersonNode({ data }: { data: FlowNodeData }) {
   return (
     <>
       <Handle type="target" position={Position.Top} className="!opacity-0" />
+      {isEgo && egoControls && (
+        <EgoChevrons controls={egoControls} />
+      )}
       <div
         className={cn(
           "rounded-lg border bg-card text-card-foreground transition cursor-pointer",
@@ -310,6 +332,97 @@ function PersonNode({ data }: { data: FlowNodeData }) {
     </>
   );
 }
+
+function EgoChevrons({ controls }: { controls: EgoControls }) {
+  const { show, counts, onToggle } = controls;
+  return (
+    <>
+      <ChevronBadge
+        dir="parents"
+        count={counts.parents}
+        expanded={show.parents}
+        onClick={() => onToggle("parents")}
+      />
+      <ChevronBadge
+        dir="children"
+        count={counts.children}
+        expanded={show.children}
+        onClick={() => onToggle("children")}
+      />
+      <ChevronBadge
+        dir="siblings"
+        count={counts.siblings}
+        expanded={show.siblings}
+        onClick={() => onToggle("siblings")}
+      />
+      <ChevronBadge
+        dir="spouses"
+        count={counts.spouses}
+        expanded={show.spouses}
+        onClick={() => onToggle("spouses")}
+      />
+    </>
+  );
+}
+
+function ChevronBadge({
+  dir,
+  count,
+  expanded,
+  onClick,
+}: {
+  dir: Direction;
+  count: number;
+  expanded: boolean;
+  onClick: () => void;
+}) {
+  if (count === 0) return null;
+  // Glyph mirrors the direction the relatives live in. Expanded state inverts
+  // (chevron points back toward ego = "click to collapse").
+  const glyph = {
+    parents: expanded ? "▼" : "▲",
+    children: expanded ? "▲" : "▼",
+    siblings: expanded ? "▶" : "◀",
+    spouses: expanded ? "◀" : "▶",
+  }[dir];
+  // Position relative to the ego card. The PersonNode wrapper is itself the
+  // ReactFlow node container, so absolute positioning anchors to that.
+  const position = {
+    parents: "absolute left-1/2 -translate-x-1/2 -top-3.5",
+    children: "absolute left-1/2 -translate-x-1/2 -bottom-3.5",
+    siblings: "absolute top-1/2 -translate-y-1/2 -left-3.5",
+    spouses: "absolute top-1/2 -translate-y-1/2 -right-3.5",
+  }[dir];
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      onMouseDown={(e) => e.stopPropagation()}
+      className={cn(
+        position,
+        "z-10 flex items-center gap-0.5 px-1.5 h-[18px] rounded-full border text-[10px] font-medium tabular-nums",
+        "bg-card hover:bg-accent transition-colors cursor-pointer",
+        expanded
+          ? "border-primary/50 text-primary"
+          : "border-border text-muted-foreground hover:text-foreground",
+      )}
+      title={`${expanded ? "Ẩn" : "Hiện"} ${count} ${TITLE[dir]}`}
+    >
+      <span>{count}</span>
+      <span aria-hidden>{glyph}</span>
+    </button>
+  );
+}
+
+const TITLE: Record<Direction, string> = {
+  parents: "cha mẹ + tổ tiên",
+  children: "con cháu",
+  spouses: "vợ chồng",
+  siblings: "anh chị em",
+};
 
 const nodeTypes = { person: PersonNode };
 
@@ -399,27 +512,71 @@ function buildEdges(edges: TreeEdge[]): Edge[] {
 export function FamilyTree({ tree }: { tree: Tree }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const open = openId !== null;
+  // Phase 2A: client-side per-direction collapse. Default expanded matches the
+  // pre-toggle behavior so existing share links still look the same.
+  const [show, setShow] = useState<ShowState>({
+    parents: true,
+    children: true,
+    spouses: true,
+    siblings: true,
+  });
+  const onToggle = useCallback((dir: Direction) => {
+    setShow((s) => ({ ...s, [dir]: !s[dir] }));
+  }, []);
 
-  // Resolve clicked id into the canonical wikidata-or-uuid for the modal API call.
-  // The button's onClick already passes the right id (qid if present, else uuid).
+  // Build the full layout + categorize each non-ego node by direction. Counts
+  // are total in-data (not visible) so the chevron badge always reflects what
+  // would appear once expanded.
+  const layoutResult = useMemo(
+    () => layout(tree.ego, tree.nodes, tree.edges),
+    [tree],
+  );
+
+  const { counts, directionOf } = useMemo(() => {
+    const c: CountsState = { parents: 0, children: 0, spouses: 0, siblings: 0 };
+    const dOf = new Map<string, Direction>();
+    for (const p of layoutResult.positioned) {
+      if (p.id === tree.ego) continue;
+      let dir: Direction;
+      if (p.level < 0) dir = "parents";
+      else if (p.level > 0) dir = "children";
+      else if (layoutResult.spouseOf.has(p.id)) dir = "spouses";
+      else if (layoutResult.siblingOf.has(p.id)) dir = "siblings";
+      else continue; // orphan at level 0 — ignore
+      dOf.set(p.id, dir);
+      c[dir] += 1;
+    }
+    return { counts: c, directionOf: dOf };
+  }, [layoutResult, tree.ego]);
 
   const { nodes, edges } = useMemo(() => {
-    const positioned = layout(tree.ego, tree.nodes, tree.edges);
-    const flowNodes: Node[] = positioned.map((p) => ({
-      id: p.id,
-      type: "person",
-      position: { x: p.x, y: p.y },
-      data: {
-        node: p,
-        isEgo: p.id === tree.ego,
-        modalId: p.wikidata_qid || p.id,
-      },
-      width: NODE_WIDTH,
-      height: NODE_HEIGHT,
-    }));
-    const flowEdges = buildEdges(tree.edges);
+    const visibleIds = new Set<string>([tree.ego]);
+    for (const [id, dir] of directionOf.entries()) {
+      if (show[dir]) visibleIds.add(id);
+    }
+    const flowNodes: Node[] = layoutResult.positioned
+      .filter((p) => visibleIds.has(p.id))
+      .map((p) => {
+        const isEgo = p.id === tree.ego;
+        return {
+          id: p.id,
+          type: "person",
+          position: { x: p.x, y: p.y },
+          data: {
+            node: p,
+            isEgo,
+            modalId: p.wikidata_qid || p.id,
+            egoControls: isEgo ? { show, counts, onToggle } : undefined,
+          },
+          width: NODE_WIDTH,
+          height: NODE_HEIGHT,
+        };
+      });
+    const flowEdges = buildEdges(tree.edges).filter(
+      (e) => visibleIds.has(e.source) && visibleIds.has(e.target),
+    );
     return { nodes: flowNodes, edges: flowEdges };
-  }, [tree]);
+  }, [layoutResult, directionOf, show, counts, tree.ego, tree.edges, onToggle]);
 
   // Identify ego's qid-or-id for "isCurrentEgo" check
   const egoNode = tree.nodes.find((n) => n.id === tree.ego);

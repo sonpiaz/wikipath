@@ -8,6 +8,7 @@
 
 ## Changelog
 
+- **2026-05-10 (v1.2.2)** — First public deploy. New §13.6 documents production hosts, storage, DNS, build pipeline. §15 Deploy criteria checked off (Vercel + Fly live). §16 Q6 records the launch decision: path β (defer Postgres write-path migration) — single Fly VM keeps DuckDB as sole writer until traffic or contribution writes require option (a). Live URLs: `wikipath.app` (Vercel/Next.js), `api.wikipath.app` (Fly/Go).
 - **2026-05-10 (v1.2.1)** — Public README rewritten for v1 (was v0 Six-Degrees pitch); 8 features summarized, schema highlights, architecture diagram, quick start, contribution tier explanation, license + privacy summary, v0 archive note. §16 adds open question 6: DuckDB single-writer lock architecture trade-off (with three production options for #14 evaluation). Competitor-name cleanup pass: removed specific names (Grokipedia, Entitree, Plausible, Posthog, Phả Tuệ) from public SPEC + PRIVACY; positioning reframed in generic-category terms.
 - **2026-05-10 (v1.2)** — Added §1.1 positioning context (where wikipath sits among adjacent product categories) with moat thesis (provable provenance + VN cultural depth + open data). Added §1.2 design influences (minimalist landing, footer counter, low-friction Suggest path, dark + serif theme). §4.4 community contribution restructured into 3 tiers: Tier-0 Suggest (anonymous, 0-auth), Tier-1 Edit (auth + CLA), Tier-2 Moderate (trust ≥ 3). §10 URL adds footer counter requirement.
 - **2026-05-10 (v1.1)** — Added F7 (avatar/image rendering) + F8 (engagement analytics). New §17 covers event taxonomy, scoring algorithm, backend endpoints, FE instrumentation, privacy, and priority-enrichment use case. §3 adds `event` + `person_popularity` tables. §4 adds §4.6 image import, §4.7 scholar pool expansion (P106 occupation filter + birth year 1200-2010), §4.8 LLM enrichment hardening (name filter). §11 privacy split into subject-data + user-data. §13 execution list reorganized: steps 1-10b marked complete, steps 10c-10k forward plan (filter, image import, FE avatar, engagement schema, backend, tracker, refresh job, candidate pool expansion, bulk enrichment to 5k bios). §13.5 ongoing operations: popularity-driven enrichment loop after 30 days of traffic. §15 done targets bumped (5k bios, 3k avatars, false-positive <1%, engagement instrumented). §16 questions resolved 3 of 4, added 5 new.
@@ -599,6 +600,46 @@ Once §10f-10i ship and the site has been live ≥30 days, switch the enrichment
 
 This closes the feedback loop: user interest → enrichment priority → richer data → more interest.
 
+## 13.6 Deploy log (v0.1 — 2026-05-10)
+
+First public deploy. Architecture chose Q6 path β (defer Postgres write-path
+migration to post-launch); details in §16 Q6 update below.
+
+**Production hosts**:
+- `https://wikipath.app` + `https://www.wikipath.app` — Next.js 16 App Router on
+  Vercel (region: auto-edge), project `sonpiazs-projects/wikipath`. Deployment
+  `wikipath-ojywihxsj-sonpiazs-projects.vercel.app` aliased to apex + www.
+  Auto-issued Let's Encrypt certs.
+- `https://api.wikipath.app` — Go binary (`cmd/api`) on Fly.io app
+  `wikipath-api`, region `sin` (Singapore — closest to VN audience). Single
+  shared-cpu-1x VM, 512MB RAM. Auto-stop on idle (suspend), cold start ~1s.
+
+**Storage**:
+- Fly volume `wikipath_data` (1GB, encrypted) mounted at `/data`. Holds
+  `wikipath.duckdb` (11MB seed shipped in image, copied to volume on first boot
+  via `docker-entrypoint.sh`).
+
+**DNS** (Namecheap, set via API not nameserver delegation):
+- `wikipath.app A 76.76.21.21` (Vercel apex)
+- `www.wikipath.app A 76.76.21.21` (Vercel www)
+- `api.wikipath.app A 66.241.124.159` + `AAAA 2a09:8280:1::113:f392:0` (Fly)
+
+**Build/deploy pipeline**:
+- Backend: `fly deploy --remote-only` from repo root. Multi-stage Dockerfile
+  (`golang:1.24-bookworm` builder → `debian:bookworm-slim` runtime). 47MB
+  final image. CGO required by `marcboeker/go-duckdb/v2`.
+- Frontend: `vercel --prod` from `web/`. Turbopack build, ~10s. Single env var
+  `NEXT_PUBLIC_WIKIPATH_API_URL=https://api.wikipath.app` (baked into client
+  bundle).
+
+**What's not yet deployed**:
+- Postgres write-path (Q6 option a) — deferred per launch decision; current
+  setup means Python batch enrichment must stop the API to acquire DuckDB lock.
+  Acceptable while traffic is low and enrichment is manual.
+- `cmd/refresh-popularity` cron — popularity scores recomputed only on demand
+  via `/api/admin/popularity?refresh=true` (when added).
+- Engagement opt-out UI (Q3) — to ship before any external launch announcement.
+
 ## 14. Out of scope (anti-features)
 
 - Private family-only mode (8 competitors do this; we are explicitly public-by-default)
@@ -639,7 +680,8 @@ This closes the feedback loop: user interest → enrichment priority → richer 
 - [ ] PRIVACY explicitly covers §17.5 user-behavior tracking + opt-out
 
 ### Deploy
-- [ ] Deployed to Vercel preview, share URL works
+- [x] Deployed to Vercel production, `https://wikipath.app` returns 200
+- [x] Go API live at `https://api.wikipath.app/healthz`, search/tree/trending verified
 - [ ] Cron job for nightly popularity refresh confirmed running
 
 ## 16. Open questions
@@ -657,11 +699,19 @@ Still open:
 3. **Engagement opt-out UI placement**: footer link vs. cookie banner vs. settings page (no settings page until F6). Recommend footer link → simple toggle, no modal, no banner.
 4. **Wikidata P18 license edge cases**: most Commons images are CC-BY-SA, some are PD, a few non-free fair-use. SPARQL doesn't return license metadata. Risk: rendering a non-free image without attribution. Mitigation: trust Commons curation (they don't usually host non-free at FilePath), and always link to Commons page from PersonModal. **Decision: ship with that mitigation, revisit if takedown received.**
 5. **Sitelinks fame proxy threshold**: at what `?sitelinks` count does a person stop being "notable" for our purposes? Empirical: pre-modern scholars often have ≤5 sitelinks but are clearly notable. Recommend no hard floor in v0.1; rely on user popularity signal post-launch to demote noise.
-6. **DuckDB single-writer lock (production architecture)**: the v0.1 store opens DuckDB in `read_write` mode so the same process can serve reads (search, tree, detail, path) and write engagement events. DuckDB serializes file locks across processes, so the Python batch pipeline (`scripts/import_*`, `scripts/enrich_async`) requires the Go API to be stopped before it can connect. Acceptable for local dev and pre-launch. **For production, three options to evaluate at §14 deploy time**:
-   - (a) Keep DuckDB as the read store, move the write path (`event`, `contribution_log`, `contributor`) to Neon Postgres per the original §9 stack. Sync DuckDB nightly via `cmd/refresh-popularity` (#10i). Cleanest separation; matches existing architecture intent.
+6. **DuckDB single-writer lock (production architecture)**: the v0.1 store opens DuckDB in `read_write` mode so the same process can serve reads (search, tree, detail, path) and write engagement events. DuckDB serializes file locks across processes, so the Python batch pipeline (`scripts/import_*`, `scripts/enrich_async`) requires the Go API to be stopped before it can connect. Acceptable for local dev and pre-launch. **Three options previously evaluated for production**:
+   - (a) Keep DuckDB as the read store, move the write path (`event`, `contribution_log`, `contributor`) to Postgres. Sync DuckDB nightly via `cmd/refresh-popularity` (#10i). Cleanest separation; matches existing architecture intent.
    - (b) Run a single long-lived Go process that owns the DB file and exposes a write API; bulk Python pipelines hit that API instead of the file directly. Adds a coordination layer but stays single-store.
    - (c) Periodic write windows: schedule batch jobs to run during low-traffic windows; the API briefly drains and yields the lock. Simplest, but introduces visible downtime windows.
-   Recommend (a) for production. Decision deferred until #14 deploy.
+
+   **2026-05-10 launch decision: path β (defer)** — single Fly VM keeps the
+   DuckDB lock as the only writer in production for now (no Python batch runs
+   against the live volume; enrichment continues against a local DuckDB on
+   MacBook, then the file is shipped via deploy or `fly ssh sftp` upload). This
+   is acceptable while traffic is low and enrichment is operator-driven.
+   **Trigger to revisit**: when (i) bulk enrichment becomes daily-or-faster,
+   (ii) horizontal scale is required, or (iii) community-contribution writes
+   land — pick option (a) and migrate.
 
 ---
 

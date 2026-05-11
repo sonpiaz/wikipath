@@ -1,0 +1,14 @@
+.git
+.gitignore
+.env
+.env.example
+.next
+node_modules
+__pycache__
+*.duckdb.wal
+data/
+docs/
+scripts/
+web/
+.vercel
+.fly

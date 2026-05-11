@@ -120,7 +120,16 @@ export function PersonModal({
           <ModalBody
             detail={detail}
             isCurrentEgo={isCurrentEgo}
+            currentEgoId={currentEgoId}
             onGoToTree={goToTree}
+            onGoToPath={(target) => {
+              onOpenChange(false);
+              if (currentEgoId) {
+                router.push(
+                  `/path/${encodeURIComponent(currentEgoId)}/${encodeURIComponent(target)}`,
+                );
+              }
+            }}
           />
         )}
       </DialogContent>
@@ -131,11 +140,15 @@ export function PersonModal({
 function ModalBody({
   detail: d,
   isCurrentEgo,
+  currentEgoId,
   onGoToTree,
+  onGoToPath,
 }: {
   detail: PersonDetail;
   isCurrentEgo: boolean;
+  currentEgoId?: string;
   onGoToTree: () => void;
+  onGoToPath: (target: string) => void;
 }) {
   const yearRange = [
     d.birth_year && `${d.birth_year}`,
@@ -282,16 +295,10 @@ function ModalBody({
             🌳 Mở cây từ đây
           </Button>
         )}
-        {detail && currentEgoId && !isCurrentEgo ? (
+        {currentEgoId && !isCurrentEgo ? (
           <Button
             variant="outline"
-            onClick={() => {
-              const target = detail.wikidata_qid || detail.id;
-              onOpenChange(false);
-              router.push(
-                `/path/${encodeURIComponent(currentEgoId)}/${encodeURIComponent(target)}`,
-              );
-            }}
+            onClick={() => onGoToPath(d.wikidata_qid || d.id)}
           >
             So sánh quan hệ
           </Button>

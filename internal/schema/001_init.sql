@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS person (
     id                       UUID PRIMARY KEY,
     wikidata_qid             VARCHAR,
     wikipedia_vi_url         VARCHAR,
-    birth_name               VARCHAR NOT NULL,
+    birth_name               VARCHAR,  -- nullable: parser leaves NULL when source has no usable name (CHECK at bottom validates if set)
     current_family_name      VARCHAR,
     original_family_name     VARCHAR,
     lineage_branch           VARCHAR,
@@ -44,7 +44,20 @@ CREATE TABLE IF NOT EXISTS person (
     trust_score              INTEGER DEFAULT 50,
     primary_source           VARCHAR,
     created_at               TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at               TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at               TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- birth_name must be a real name, not a 1-char placeholder.
+    CHECK (birth_name IS NULL OR length(birth_name) >= 2),
+    -- birth_name must not be a Wikidata QID ("Q12345") or a year-only fallback ("1900").
+    -- These slip in when enrichment fails and the upstream label was never resolved.
+    CHECK (birth_name IS NULL OR NOT regexp_matches(birth_name, '^Q?[0-9]+$')),
+    -- A person cannot die before they were born.
+    CHECK (death_date_y IS NULL OR birth_date_y IS NULL OR death_date_y >= birth_date_y),
+    -- Calendar bounds (we accept any month/day; we do NOT validate per-month day count
+    -- because historical Vietnamese dates frequently use lunar calendar variants).
+    CHECK (birth_date_m IS NULL OR (birth_date_m BETWEEN 1 AND 12)),
+    CHECK (birth_date_d IS NULL OR (birth_date_d BETWEEN 1 AND 31)),
+    CHECK (death_date_m IS NULL OR (death_date_m BETWEEN 1 AND 12)),
+    CHECK (death_date_d IS NULL OR (death_date_d BETWEEN 1 AND 31))
 );
 
 CREATE INDEX IF NOT EXISTS idx_person_qid    ON person(wikidata_qid);
@@ -80,7 +93,11 @@ CREATE TABLE IF NOT EXISTS relation (
     source_ref      VARCHAR,
     confidence      INTEGER DEFAULT 70,
     created_by      UUID,
-    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- A person cannot be in a relation with themselves.
+    CHECK (from_person_id <> to_person_id),
+    -- Confidence is a 0-100 percentage.
+    CHECK (confidence IS NULL OR confidence BETWEEN 0 AND 100)
 );
 
 CREATE INDEX IF NOT EXISTS idx_relation_from ON relation(from_person_id);

@@ -39,6 +39,24 @@ SYMMETRIC_KINDS = {
     "sibling_full", "sibling_paternal", "sibling_maternal",
 }
 
+
+# Minimal name validator — rejects parser garbage that has historically
+# leaked into person.birth_name. Specifically guards against (a) QID
+# strings used as label fallback when SPARQL returns no `?toLabel`, and
+# (b) bare year strings or 1-char fragments. Broader semantic checks live
+# in scripts/enrich_async.is_valid_person_name.
+def is_plausible_person_name(name):
+    if not name:
+        return False
+    n = name.strip()
+    if len(n) < 2:
+        return False
+    if re.fullmatch(r"\d+", n):
+        return False  # year-only
+    if re.fullmatch(r"Q\d+", n):
+        return False  # raw Wikidata QID
+    return True
+
 # ─────────── UUID helpers (mirror seed_db.py) ───────────
 
 def slug_from_qid(qid: str) -> str:
@@ -284,6 +302,10 @@ class Store:
             elif birth_y < 1900: era = "1500-1900"
             elif birth_y < 1950: era = "1900-1950"
             else: era = "1950+"
+        # Reject junk labels (QID-as-name, year-as-name, fragments) so we
+        # don't poison person.birth_name. NULL is fine — wikidata_qid is
+        # still set, so enrichment can backfill the real name later.
+        clean_label = label if is_plausible_person_name(label) else None
         self.con.execute(
             """
             INSERT INTO person (
@@ -294,7 +316,7 @@ class Store:
             ON CONFLICT (id) DO NOTHING
             """,
             [
-                pid, qid, label, era, gender, "confirmed",
+                pid, qid, clean_label, era, gender, "confirmed",
                 85, source,
                 birth_y, death_y, birth_place,
             ],

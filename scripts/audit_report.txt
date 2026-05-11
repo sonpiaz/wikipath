@@ -1,0 +1,37 @@
+# wikipath relation temporal audit
+# DB: /Users/sonpiaz/wikipath/wikipath.duckdb
+
+## Per-rule violation count
+  parent_born_after_child                0
+  parent_died_before_child_born          0
+  child_born_before_parent               0
+  child_born_after_parent_death          0
+  spouse_impossible_gap                  0
+  sibling_birth_gap_too_large            0
+
+Total bad relations (unique ids): 0
+Known case caught (HCM + Hoang Thi Loan 1995): no
+
+========================================================================
+Rule: parent_born_after_child  (0 violations)
+========================================================================
+
+========================================================================
+Rule: parent_died_before_child_born  (0 violations)
+========================================================================
+
+========================================================================
+Rule: child_born_before_parent  (0 violations)
+========================================================================
+
+========================================================================
+Rule: child_born_after_parent_death  (0 violations)
+========================================================================
+
+========================================================================
+Rule: spouse_impossible_gap  (0 violations)
+========================================================================
+
+========================================================================
+Rule: sibling_birth_gap_too_large  (0 violations)
+========================================================================

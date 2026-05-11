@@ -270,6 +270,25 @@ SYMMETRIC_KINDS = {
 }
 
 
+# Minimal name validator — rejects parser garbage that has historically
+# leaked into person.birth_name from Wikipedia infoboxes (e.g. lone years
+# from "Bảo Long, 1936<br>Phương Mai, 1937") and from Wikidata SPARQL
+# (e.g. QID strings used as label fallback). Broader semantic checks live
+# in scripts/enrich_async.is_valid_person_name; this guard is intentionally
+# narrow so legitimate single-token names still pass for wiki sources.
+def is_plausible_person_name(name: str | None) -> bool:
+    if not name:
+        return False
+    n = name.strip()
+    if len(n) < 2:
+        return False
+    if re.fullmatch(r"\d+", n):
+        return False  # year-only ("1936")
+    if re.fullmatch(r"Q\d+", n):
+        return False  # raw Wikidata QID
+    return True
+
+
 def canonicalize_relation(from_id: uuid.UUID, kind: str, to_id: uuid.UUID
                           ) -> tuple[uuid.UUID, uuid.UUID]:
     """For symmetric kinds, always store with the lexicographically smaller
@@ -303,8 +322,10 @@ class Store:
         self.name_index = {r[2]: r[0] for r in rows}
 
     def find_or_create(self, name: str, qid: str | None = None,
-                       source: str = "wikipedia_vi") -> tuple[uuid.UUID, bool]:
-        """Returns (person_id, was_created)."""
+                       source: str = "wikipedia_vi") -> tuple[uuid.UUID, bool] | tuple[None, bool]:
+        """Returns (person_id, was_created), or (None, False) if name is junk."""
+        if not is_plausible_person_name(name):
+            return None, False
         if qid and qid in self.qid_index:
             return self.qid_index[qid], False
         if name in self.name_index:
@@ -483,16 +504,25 @@ def import_one(store: Store, title: str, *, verbose: bool = False) -> dict:
         if fname in PARENT_FIELD:
             for name, qid in resolve_links_in_field(fval):
                 pid2, _ = store.find_or_create(name)
+                if pid2 is None:
+                    rel_count["skipped"] += 1
+                    continue
                 store.upsert_relation("parent_father", pid, pid2, source_ref=src)
                 rel_count["father"] += 1
         elif fname in MOTHER_FIELD:
             for name, qid in resolve_links_in_field(fval):
                 pid2, _ = store.find_or_create(name)
+                if pid2 is None:
+                    rel_count["skipped"] += 1
+                    continue
                 store.upsert_relation("parent_mother", pid, pid2, source_ref=src)
                 rel_count["mother"] += 1
         elif fname in SPOUSE_FIELD:
             for rank, (name, qid) in enumerate(resolve_links_in_field(fval), start=1):
                 pid2, _ = store.find_or_create(name)
+                if pid2 is None:
+                    rel_count["skipped"] += 1
+                    continue
                 store.upsert_relation("spouse", pid, pid2, rank=rank, source_ref=src)
                 rel_count["spouse"] += 1
         elif fname in CHILD_FIELD:
@@ -501,6 +531,9 @@ def import_one(store: Store, title: str, *, verbose: bool = False) -> dict:
                     rel_count["skipped"] += 1
                     continue
                 pid2, _ = store.find_or_create(name)
+                if pid2 is None:
+                    rel_count["skipped"] += 1
+                    continue
                 # Convention: parent_father from=child, to=parent.
                 # canonical has child pid2 → relation: pid2 parent_father pid
                 store.upsert_relation("parent_father", pid2, pid, source_ref=src)
@@ -508,6 +541,9 @@ def import_one(store: Store, title: str, *, verbose: bool = False) -> dict:
         elif fname in SIBLING_FIELD:
             for name, qid in resolve_links_in_field(fval):
                 pid2, _ = store.find_or_create(name)
+                if pid2 is None:
+                    rel_count["skipped"] += 1
+                    continue
                 store.upsert_relation("sibling_full", pid, pid2, source_ref=src)
                 rel_count["sibling"] += 1
 

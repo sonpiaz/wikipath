@@ -10,7 +10,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { getPersonDetail, type PersonDetail } from "@/lib/api";
@@ -163,6 +163,12 @@ function ModalBody({
   const death = formatDate(d.death_year, d.death_month, d.death_day);
 
   const lineage = [d.family_name, d.lineage_branch].filter(Boolean).join(" · ");
+  const reportUrl = buildReportUrl({
+    qid: d.wikidata_qid,
+    id: d.id,
+    name: d.name,
+    yearRange,
+  });
 
   return (
     <>
@@ -307,15 +313,51 @@ function ModalBody({
             So sánh…
           </Button>
         )}
-        <Button variant="ghost" size="sm" disabled title="Sắp ra mắt">
+        <a
+          href={reportUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={buttonVariants({ variant: "ghost", size: "sm" })}
+          title="Mở GitHub issue để đề xuất sửa thông tin / quan hệ"
+        >
           ✏️ Sửa
-        </Button>
+        </a>
         <Button variant="ghost" size="sm" disabled title="Sắp ra mắt">
           ➕ Thêm người thân
         </Button>
       </div>
     </>
   );
+}
+
+function buildReportUrl({
+  qid,
+  id,
+  name,
+  yearRange,
+}: {
+  qid?: string;
+  id: string;
+  name: string;
+  yearRange: string;
+}) {
+  const personId = qid || id;
+  const title = `Sửa thông tin: ${name}${qid ? ` (${qid})` : ""}`;
+  const body = `**Trang:** https://wikipath.app/p/${personId}
+**Người:** ${name}${yearRange ? ` (${yearRange})` : ""}
+${qid ? `**Wikidata:** https://www.wikidata.org/wiki/${qid}\n` : ""}
+### Đề xuất sửa
+
+(Mô tả ngắn cái gì sai hoặc thiếu, kèm nguồn — Wikipedia link / sách / báo / Wikidata QID)
+
+### Nếu sửa quan hệ trong cây gia phả
+
+Vd: "Hoàng Thị Loan 1995 không phải mẹ của Nguyễn Sinh Cung; mẹ thật là Hoàng Thị Loan 1868-1901."
+
+---
+*Auto-filled từ wikipath. SLA phản hồi 7 ngày — xem [Takedown](https://wikipath.app/takedown).*`;
+
+  return `https://github.com/sonpiaz/wikipath/issues/new?labels=correction&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
 }
 
 function Stat({ label, value }: { label: string; value: number }) {

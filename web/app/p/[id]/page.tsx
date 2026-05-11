@@ -94,13 +94,15 @@ export default async function PersonPage({ params }: PageProps) {
               className="text-muted-foreground hover:text-foreground"
               title="Mở GitHub issue để đề xuất sửa thông tin / quan hệ"
             >
-              ✎ Đề xuất sửa
+              <span className="hidden sm:inline">✎ Đề xuất sửa</span>
+              <span className="sm:hidden" aria-label="Đề xuất sửa">✎</span>
             </a>
             <Link
               href="/"
               className="text-muted-foreground hover:text-foreground"
             >
-              ← Tìm người khác
+              <span className="hidden sm:inline">← Tìm người khác</span>
+              <span className="sm:hidden" aria-label="Tìm người khác">←</span>
             </Link>
           </div>
         </div>

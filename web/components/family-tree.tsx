@@ -434,8 +434,11 @@ export function FamilyTree({ tree }: { tree: Tree }) {
           nodeTypes={nodeTypes}
           onNodeClick={handleNodeClick}
           fitView
-          fitViewOptions={{ padding: 0.3, minZoom: 0.6, maxZoom: 1 }}
-          minZoom={0.3}
+          // Allow initial zoom-out to 0.25 so wide trees (e.g. Gia Long with
+          // many siblings) fit on mobile viewports. User zoom range stays
+          // generous via the outer minZoom/maxZoom props.
+          fitViewOptions={{ padding: 0.2, minZoom: 0.25, maxZoom: 1 }}
+          minZoom={0.2}
           maxZoom={1.5}
           nodesDraggable={false}
           nodesConnectable={false}

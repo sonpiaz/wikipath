@@ -33,13 +33,13 @@ export default async function HomePage() {
             <div className="text-sm flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
               <SampleLink id="Q36014">Hồ Chí Minh</SampleLink>
               <span className="text-muted-foreground/40">·</span>
+              <SampleLink id="Q318458">Nguyễn Phú Trọng</SampleLink>
+              <span className="text-muted-foreground/40">·</span>
               <SampleLink id="Q223771">Bảo Đại</SampleLink>
               <span className="text-muted-foreground/40">·</span>
+              <SampleLink id="Q716945">Lý Thái Tổ</SampleLink>
+              <span className="text-muted-foreground/40">·</span>
               <SampleLink id="Q511375">Trần Hưng Đạo</SampleLink>
-              <span className="text-muted-foreground/40">·</span>
-              <SampleLink id="Q210417">Gia Long</SampleLink>
-              <span className="text-muted-foreground/40">·</span>
-              <SampleLink id="Q316127">Lê Lợi</SampleLink>
             </div>
           </div>
         </div>

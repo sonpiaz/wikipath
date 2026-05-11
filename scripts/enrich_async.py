@@ -32,7 +32,7 @@ import duckdb
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB = ROOT / "wikipath.duckdb"
 NS = uuid.UUID("8b0e3c4f-1234-5000-8000-000000000000")
-USER_AGENT = "wikipath-enrich-async/0.1 (https://github.com/start01/wikipath; sonpiaz@gmail.com)"
+USER_AGENT = "wikipath-enrich-async/0.1 (https://github.com/piazlabs/wikipath; sonpiaz@gmail.com)"
 WIKI_API = "https://vi.wikipedia.org/w/api.php"
 KYMA_API = "https://api.kymaapi.com/v1/chat/completions"
 # Override via the LLM_MODEL env var. Default is the stable-tier DeepSeek v3

@@ -1,4 +1,4 @@
-module github.com/start01/wikipath
+module github.com/piazlabs/wikipath
 
 go 1.24
 

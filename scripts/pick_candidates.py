@@ -20,7 +20,7 @@ import duckdb
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB = ROOT / "wikipath.duckdb"
-USER_AGENT = "wikipath-cand/0.1 (https://github.com/start01/wikipath; sonpiaz@gmail.com)"
+USER_AGENT = "wikipath-cand/0.1 (https://github.com/piazlabs/wikipath; sonpiaz@gmail.com)"
 SPARQL_ENDPOINT = "https://query.wikidata.org/sparql"
 
 # Persons with a vi.wikipedia article + born in given year band.

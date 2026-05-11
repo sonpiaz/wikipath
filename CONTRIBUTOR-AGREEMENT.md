@@ -13,7 +13,7 @@ submit to the project through:
 
 - The Suggest form (Tier 0, anonymous, no account).
 - The Edit / Add UI (Tier 1, requires authentication and CLA acceptance).
-- A pull request to https://github.com/start01/wikipath.
+- A pull request to https://github.com/piazlabs/wikipath.
 - A direct submission to the maintainer.
 
 ## 2. You confirm that

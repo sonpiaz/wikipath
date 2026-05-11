@@ -1,0 +1,47 @@
+wikipath — Database license
+
+The compiled wikipath database (the collection of person records, name
+records, relation records, and derived views distributed in or alongside
+this repository) is dual-licensed under:
+
+  1. Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+     https://creativecommons.org/licenses/by-sa/4.0/
+
+  2. Open Database License 1.0 (ODbL)
+     https://opendatacommons.org/licenses/odbl/1-0/
+
+You may use, redistribute, and adapt the database under EITHER license.
+
+Attribution requirements (both licenses):
+
+  - Cite "wikipath" and link to the project (https://github.com/sonpiaz/wikipath
+    or the deployed site URL) when redistributing the database or
+    substantial subsets.
+  - Pass on the same license when redistributing derived databases
+    (ShareAlike / Share-Alike provisions of the chosen license).
+  - For individual person records sourced primarily from Wikipedia or
+    Wikidata, preserve the original source attribution where possible —
+    those upstream sources carry their own license terms which we
+    inherit.
+
+What is NOT covered by LICENSE-DATA:
+
+  - The code in this repository — see LICENSE (MIT).
+  - User-uploaded photographs of living persons — those remain owned by
+    the uploader; the project receives only a limited license per the
+    Contributor Agreement (CONTRIBUTOR-AGREEMENT.md).
+  - Avatar images served from Wikimedia Commons via Wikidata P18 — those
+    are governed by their own per-file Commons licenses; wikipath only
+    stores the URL, not the image.
+
+Upstream data acknowledgement:
+
+  - Wikipedia (vi.wikipedia.org): each article carries its own CC BY-SA
+    3.0 / 4.0 license. wikipath relies on the spirit of those licenses —
+    facts are not copyrightable, but text quotes are and we limit
+    extraction to factual structured data with ≤3-line source-sentence
+    citations.
+  - Wikidata: CC0 — public domain dedication. We re-license downstream
+    under CC BY-SA + ODbL.
+
+Last updated: 2026-05-10.

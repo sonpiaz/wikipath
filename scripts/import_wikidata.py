@@ -31,7 +31,7 @@ import duckdb
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB = ROOT / "wikipath.duckdb"
 NS = uuid.UUID("8b0e3c4f-1234-5000-8000-000000000000")
-USER_AGENT = "wikipath-importer/0.1 (https://github.com/piazlabs/wikipath; sonpiaz@gmail.com)"
+USER_AGENT = "wikipath-importer/0.1 (https://github.com/sonpiaz/wikipath; sonpiaz@gmail.com)"
 SPARQL_ENDPOINT = "https://query.wikidata.org/sparql"
 
 SYMMETRIC_KINDS = {

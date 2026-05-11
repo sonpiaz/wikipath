@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/piazlabs/wikipath/internal/store"
+	"github.com/sonpiaz/wikipath/internal/store"
 )
 
 // ─────────── Rate limiter (per session_id, in-memory) ───────────

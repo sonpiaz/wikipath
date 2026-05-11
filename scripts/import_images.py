@@ -28,7 +28,7 @@ import duckdb
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB = ROOT / "wikipath.duckdb"
-USER_AGENT = "wikipath-images/0.1 (https://github.com/piazlabs/wikipath; sonpiaz@gmail.com)"
+USER_AGENT = "wikipath-images/0.1 (https://github.com/sonpiaz/wikipath; sonpiaz@gmail.com)"
 SPARQL_ENDPOINT = "https://query.wikidata.org/sparql"
 
 # Special:FilePath template. Wikimedia auto-redirects to actual file URL,

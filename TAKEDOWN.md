@@ -29,7 +29,7 @@ information about you or someone you represent.
   cycle).
 
 If we don't reply within 7 days, escalate by opening an issue at
-https://github.com/piazlabs/wikipath/issues with the label `takedown`.
+https://github.com/sonpiaz/wikipath/issues with the label `takedown`.
 
 ## What we will do without push-back
 

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/piazlabs/wikipath/internal/store"
+	"github.com/sonpiaz/wikipath/internal/store"
 )
 
 func main() {

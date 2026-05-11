@@ -114,7 +114,7 @@ Requirements: Go 1.24+, Python 3.11+, Node 20+, DuckDB CLI, pnpm.
 
 ```bash
 # 1. Clone + install
-git clone https://github.com/piazlabs/wikipath.git
+git clone https://github.com/sonpiaz/wikipath.git
 cd wikipath
 cd web && pnpm install && cd ..
 
@@ -239,4 +239,4 @@ current codebase.
 ## Contact
 
 Takedown / correction requests: see [TAKEDOWN.md](TAKEDOWN.md).
-Other inquiries: open an issue at https://github.com/piazlabs/wikipath/issues.
+Other inquiries: open an issue at https://github.com/sonpiaz/wikipath/issues.

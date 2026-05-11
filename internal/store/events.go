@@ -182,6 +182,8 @@ func (s *Store) GetTrending(ctx context.Context, windowDays, limit int) ([]Trend
 	if windowDays <= 0 || windowDays > 90 {
 		windowDays = 7
 	}
+	// Same Q-only guard as GetTree/GetPersonDetail — trending list on the
+	// landing should never surface "Q123456" placeholders.
 	rows, err := s.db.QueryContext(ctx, `
 		WITH counts AS (
 			SELECT person_id,
@@ -200,6 +202,8 @@ func (s *Store) GetTrending(ctx context.Context, windowDays, limit int) ([]Trend
 		       p.avatar_url
 		FROM counts c
 		JOIN person p ON p.id = c.person_id
+		WHERE p.birth_name IS NOT NULL AND p.birth_name != ''
+		  AND NOT regexp_matches(p.birth_name, '^Q[0-9]+$')
 		ORDER BY score DESC
 		LIMIT ?
 	`, windowDays, limit)

@@ -392,9 +392,17 @@ class Store:
                 fields.pop("bio_full", None)
         if not fields:
             return
-        cols = ", ".join(f"{k} = COALESCE({k}, ?)"
-                          if k.startswith(("birth_", "death_")) else f"{k} = ?"
-                          for k in fields)
+        # Policy A "Wikipedia wins" for canonical date fields. The previous
+        # COALESCE-based update kept whatever year was first imported (usually
+        # from a Wikidata stub), which led to cases where the DB header said
+        # 1911 while the LLM-extracted bio quoted 1908 from Wikipedia.
+        # Wikipedia VN is the maintained source for Vietnamese biographies;
+        # let it override. Place stays COALESCE'd because Wikipedia sometimes
+        # omits the place even when Wikidata has it.
+        cols = ", ".join(
+            f"{k} = COALESCE({k}, ?)" if k.endswith("_place") else f"{k} = ?"
+            for k in fields
+        )
         args = list(fields.values()) + [pid]
         self.con.execute(
             f"UPDATE person SET {cols}, updated_at = CURRENT_TIMESTAMP "

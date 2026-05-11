@@ -41,6 +41,33 @@ const ERA_LABEL: Record<string, string> = {
   mythological: "Huyền thoại",
 };
 
+// Curated, diverse pool — keeps placeholder honest (we have all four categories)
+// without becoming a top-N popularity loop. Order is intentionally mixed so
+// consecutive cycles never feel like a single bucket.
+const PLACEHOLDER_NAMES = [
+  "Hồ Chí Minh",
+  "Nguyễn Du",
+  "Lý Thái Tổ",
+  "Trịnh Công Sơn",
+  "Trần Hưng Đạo",
+  "Hồ Xuân Hương",
+  "Nguyễn Phú Trọng",
+  "Lê Quý Đôn",
+  "Bảo Đại",
+  "Văn Cao",
+  "Lê Lợi",
+  "Tô Hoài",
+  "Gia Long",
+  "Phan Châu Trinh",
+  "Trần Nhân Tông",
+  "Ngô Bảo Châu",
+  "Nguyễn Huệ",
+  "Phạm Văn Đồng",
+  "Nguyễn Trãi",
+  "Võ Nguyên Giáp",
+];
+const PLACEHOLDER_INTERVAL_MS = 2800;
+
 type Props = {
   initialTrending?: TrendingItem[];
 };
@@ -54,12 +81,25 @@ export function SearchBox({ initialTrending = [] }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const [recent, setRecent] = useState<RecentEntry[]>([]);
+  const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Hydrate recent from localStorage on mount
+  // Hydrate recent from localStorage on mount + pick a random starting placeholder
+  // so two tabs opened side-by-side don't lockstep.
   useEffect(() => {
     setRecent(readRecent());
+    setPlaceholderIdx(Math.floor(Math.random() * PLACEHOLDER_NAMES.length));
   }, []);
+
+  // Rotate placeholder while the input is empty. Pause once user types so the
+  // hint doesn't jitter behind their cursor.
+  useEffect(() => {
+    if (q.length > 0) return;
+    const id = setInterval(() => {
+      setPlaceholderIdx((i) => (i + 1) % PLACEHOLDER_NAMES.length);
+    }, PLACEHOLDER_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [q]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -146,7 +186,7 @@ export function SearchBox({ initialTrending = [] }: Props) {
           value={q}
           onValueChange={setQ}
           onFocus={() => setFocused(true)}
-          placeholder="Tìm tên (vd: Hồ Chí Minh, Nguyen Phu Trong, Bao Dai)"
+          placeholder={PLACEHOLDER_NAMES[placeholderIdx]}
           className="h-14 text-lg font-name"
         />
         {isOpen && (

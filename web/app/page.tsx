@@ -21,27 +21,10 @@ export default async function HomePage() {
     <main className="flex-1 flex flex-col">
       <TopBar />
 
-      <section className="flex-1 flex flex-col items-center justify-center px-6 pb-32">
-        <div className="w-full max-w-2xl space-y-10">
+      <section className="flex-1 flex flex-col items-center px-6 pt-[18vh] md:pt-[20vh]">
+        <div className="w-full max-w-2xl space-y-8">
           <Hero />
           <SearchBox initialTrending={trending} />
-
-          <div className="space-y-1.5 text-center">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              Thử mẫu
-            </p>
-            <div className="text-sm flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-              <SampleLink id="Q36014">Hồ Chí Minh</SampleLink>
-              <span className="text-muted-foreground/40">·</span>
-              <SampleLink id="Q318458">Nguyễn Phú Trọng</SampleLink>
-              <span className="text-muted-foreground/40">·</span>
-              <SampleLink id="Q223771">Bảo Đại</SampleLink>
-              <span className="text-muted-foreground/40">·</span>
-              <SampleLink id="Q716945">Lý Thái Tổ</SampleLink>
-              <span className="text-muted-foreground/40">·</span>
-              <SampleLink id="Q511375">Trần Hưng Đạo</SampleLink>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -79,17 +62,6 @@ function Hero() {
         Tra cứu cây gia phả của vua chúa, lãnh đạo, văn nghệ sĩ Việt Nam.
       </p>
     </div>
-  );
-}
-
-function SampleLink({ id, children }: { id: string; children: React.ReactNode }) {
-  return (
-    <Link
-      href={`/p/${id}`}
-      className="font-name underline decoration-muted-foreground/30 underline-offset-4 hover:decoration-foreground hover:text-foreground transition-colors"
-    >
-      {children}
-    </Link>
   );
 }
 

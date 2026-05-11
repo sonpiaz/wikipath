@@ -14,6 +14,7 @@ export type Suggestion = {
   death_year?: number;
   birth_place?: string;
   bio_short?: string;
+  avatar_url?: string;
   era: string;
   dynasty?: string;
   lineage?: string;
@@ -36,6 +37,7 @@ export type TreeNode = {
   era: string;
   dynasty?: string;
   gender: string;
+  avatar_url?: string;
 };
 
 export type TreeEdge = {
@@ -90,6 +92,7 @@ export type PersonDetail = {
   death_place?: string;
   bio_short?: string;
   bio_full?: string;
+  avatar_url?: string;
   era: string;
   dynasty?: string;
   family_name?: string;
@@ -113,5 +116,47 @@ export async function getPersonDetail(id: string): Promise<PersonDetail> {
   const url = new URL(`/api/p/${encodeURIComponent(id)}/details`, BASE);
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error(`detail failed: ${res.status}`);
+  return res.json();
+}
+
+// ─────────── Path / compare (F5) ───────────
+
+export type PathHop = {
+  from: string;
+  to: string;
+  kind: string;
+  rank?: number;
+  /** True if the DB edge runs from→to as stored; false if we traversed it in reverse. */
+  forward: boolean;
+};
+
+export type PathNode = {
+  id: string;
+  name: string;
+  wikidata_qid?: string;
+  birth_year?: number;
+  death_year?: number;
+  avatar_url?: string;
+};
+
+export type Path = {
+  from: PathNode;
+  to: PathNode;
+  distance: number;
+  nodes: PathNode[];
+  hops: PathHop[];
+  common_ancestor?: string;
+};
+
+export async function getPath(from: string, to: string, max = 8): Promise<Path> {
+  const url = new URL("/api/path", BASE);
+  url.searchParams.set("from", from);
+  url.searchParams.set("to", to);
+  url.searchParams.set("max", String(max));
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`path failed: ${res.status} ${body}`);
+  }
   return res.json();
 }

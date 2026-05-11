@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { search, type SearchResult, type Suggestion } from "@/lib/api";
+import { track } from "@/lib/track";
 
 const DYNASTY_LABEL: Record<string, string> = {
   ly: "Nhà Lý",
@@ -56,7 +57,14 @@ export function SearchBox() {
       setError(null);
       try {
         const res = await search(q.trim(), 30);
-        if (!ac.signal.aborted) setData(res);
+        if (!ac.signal.aborted) {
+          setData(res);
+          const top = res.verified[0] || res.community[0];
+          track("search", {
+            query: q.trim(),
+            person_id: top ? top.wikidata_qid || top.id : undefined,
+          });
+        }
       } catch (e) {
         if (!ac.signal.aborted) {
           setError(e instanceof Error ? e.message : "Lỗi tải kết quả");

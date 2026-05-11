@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getTree } from "@/lib/api";
 import { FamilyTree } from "@/components/family-tree";
+import { TrackPageView } from "@/components/track-page-view";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -62,6 +63,7 @@ export default async function PersonPage({ params }: PageProps) {
 
   return (
     <main className="flex-1 flex flex-col min-h-0">
+      <TrackPageView personId={ego.wikidata_qid || ego.id} />
       <header className="border-b border-border bg-card/40 backdrop-blur-sm">
         <div className="px-4 md:px-6 py-2.5 flex items-center justify-between gap-4 text-sm">
           <Link href="/" className="font-name text-base shrink-0">

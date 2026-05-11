@@ -15,6 +15,8 @@ import "@xyflow/react/dist/style.css";
 import { cn } from "@/lib/utils";
 import type { Tree, TreeEdge, TreeNode } from "@/lib/api";
 import { PersonModal } from "@/components/person-modal";
+import { PersonAvatar } from "@/components/person-avatar";
+import { track } from "@/lib/track";
 
 // ─────────── Era / dynasty palette ───────────
 
@@ -42,8 +44,8 @@ const DYNASTY_LABEL: Record<string, string> = {
 
 // ─────────── Layout ───────────
 
-const NODE_WIDTH = 180;
-const NODE_HEIGHT = 78;
+const NODE_WIDTH = 210;
+const NODE_HEIGHT = 82;
 const COL_GAP = 40;
 const ROW_GAP = 90;
 
@@ -252,31 +254,41 @@ function PersonNode({ data }: { data: FlowNodeData }) {
           minHeight: NODE_HEIGHT,
         }}
       >
-        <div className="flex items-start justify-between gap-2">
-          <span
-            className="font-name text-sm leading-tight line-clamp-2 flex-1"
-            title={node.name}
-          >
-            {node.name}
-          </span>
-          {dynasty && (
-            <span
-              className="text-[9px] uppercase tracking-wide shrink-0 mt-0.5 px-1.5 py-0.5 rounded font-medium"
-              style={{
-                color: eraColor,
-                borderColor: eraColor,
-                borderWidth: 1,
-              }}
-            >
-              {dynasty}
-            </span>
-          )}
-        </div>
-        {years && (
-          <div className="text-[11px] text-muted-foreground tabular-nums mt-1">
-            {years}
+        <div className="flex items-start gap-2">
+          <PersonAvatar
+            src={node.avatar_url}
+            name={node.name}
+            sizePx={isEgo ? 40 : 32}
+            className="shrink-0 mt-0.5"
+          />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-1.5">
+              <span
+                className="font-name text-sm leading-tight line-clamp-2 flex-1"
+                title={node.name}
+              >
+                {node.name}
+              </span>
+              {dynasty && (
+                <span
+                  className="text-[9px] uppercase tracking-wide shrink-0 mt-0.5 px-1.5 py-0.5 rounded font-medium"
+                  style={{
+                    color: eraColor,
+                    borderColor: eraColor,
+                    borderWidth: 1,
+                  }}
+                >
+                  {dynasty}
+                </span>
+              )}
+            </div>
+            {years && (
+              <div className="text-[11px] text-muted-foreground tabular-nums mt-0.5">
+                {years}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
       <Handle type="source" position={Position.Bottom} className="!opacity-0" />
     </>
@@ -387,10 +399,15 @@ export function FamilyTree({ tree }: { tree: Tree }) {
   const egoNode = tree.nodes.find((n) => n.id === tree.ego);
   const egoIdForModal = egoNode?.wikidata_qid || tree.ego;
 
-  const handleNodeClick = useCallback<NodeMouseHandler>((_, node) => {
-    const data = node.data as FlowNodeData;
-    setOpenId(data.modalId);
-  }, []);
+  const handleNodeClick = useCallback<NodeMouseHandler>(
+    (_, node) => {
+      const data = node.data as FlowNodeData;
+      const eventType = data.isEgo ? "node_click" : "tree_expand";
+      track(eventType, { person_id: data.modalId });
+      setOpenId(data.modalId);
+    },
+    [],
+  );
 
   return (
     <>
@@ -423,6 +440,7 @@ export function FamilyTree({ tree }: { tree: Tree }) {
         }}
         personId={openId}
         isCurrentEgo={openId === egoIdForModal}
+        currentEgoId={egoIdForModal}
       />
     </>
   );

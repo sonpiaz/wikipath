@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { getPersonDetail, type PersonDetail } from "@/lib/api";
+import { PersonAvatar } from "@/components/person-avatar";
+import { track } from "@/lib/track";
 
 const DYNASTY_LABEL: Record<string, string> = {
   ly: "Nhà Lý",
@@ -53,13 +55,6 @@ function formatDate(y?: number, m?: number, d?: number): string | null {
   return String(y);
 }
 
-function monogram(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 0) return "?";
-  const last = parts[parts.length - 1] ?? "";
-  return last.slice(0, 1).toUpperCase();
-}
-
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -67,6 +62,8 @@ type Props = {
   personId: string | null;
   /** True when the modal target is the current page's ego (don't show "Mở cây từ đây"). */
   isCurrentEgo?: boolean;
+  /** Current page's ego qid-or-uuid, used by "So sánh…" to build the path URL. */
+  currentEgoId?: string;
 };
 
 export function PersonModal({
@@ -74,6 +71,7 @@ export function PersonModal({
   onOpenChange,
   personId,
   isCurrentEgo = false,
+  currentEgoId,
 }: Props) {
   const router = useRouter();
   const [detail, setDetail] = useState<PersonDetail | null>(null);
@@ -81,6 +79,7 @@ export function PersonModal({
 
   useEffect(() => {
     if (!open || !personId) return;
+    track("modal_open", { person_id: personId });
     let cancelled = false;
     setDetail(null);
     setError(null);
@@ -157,9 +156,12 @@ function ModalBody({
       {/* Header w/ avatar */}
       <DialogHeader className="px-6 pt-6 pb-4 space-y-3 sm:text-left">
         <div className="flex items-start gap-4">
-          <div className="h-16 w-16 shrink-0 rounded-full border border-border bg-muted flex items-center justify-center font-name text-2xl">
-            {monogram(d.name)}
-          </div>
+          <PersonAvatar
+            src={d.avatar_url}
+            name={d.name}
+            sizePx={96}
+            className="shrink-0 ring-2"
+          />
           <div className="flex-1 min-w-0">
             <DialogTitle className="font-name text-2xl leading-tight">
               {d.name}
@@ -280,9 +282,24 @@ function ModalBody({
             🌳 Mở cây từ đây
           </Button>
         )}
-        <Button variant="outline" disabled title="Sắp ra mắt">
-          So sánh…
-        </Button>
+        {detail && currentEgoId && !isCurrentEgo ? (
+          <Button
+            variant="outline"
+            onClick={() => {
+              const target = detail.wikidata_qid || detail.id;
+              onOpenChange(false);
+              router.push(
+                `/path/${encodeURIComponent(currentEgoId)}/${encodeURIComponent(target)}`,
+              );
+            }}
+          >
+            So sánh quan hệ
+          </Button>
+        ) : (
+          <Button variant="outline" disabled title="So sánh từ trang người này">
+            So sánh…
+          </Button>
+        )}
         <Button variant="ghost" size="sm" disabled title="Sắp ra mắt">
           ✏️ Sửa
         </Button>

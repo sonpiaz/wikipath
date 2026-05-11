@@ -35,7 +35,7 @@ import duckdb
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB = ROOT / "wikipath.duckdb"
 NS = uuid.UUID("8b0e3c4f-1234-5000-8000-000000000000")
-USER_AGENT = "wikipath-enrich/0.1 (https://github.com/sonpiaz/wikipath; sonpiaz@gmail.com)"
+USER_AGENT = "wikipath-enrich/0.1 (https://github.com/start01/wikipath; sonpiaz@gmail.com)"
 WIKI_API = "https://vi.wikipedia.org/w/api.php"
 KYMA_API = "https://api.kymaapi.com/v1/chat/completions"
 LLM_MODEL = "deepseek-v4-pro"
@@ -47,15 +47,23 @@ SYMMETRIC_KINDS = {
 
 
 def load_kyma_key() -> str:
+    """Load the Kyma API key from the KYMA_API_KEY environment variable.
+
+    Falls back to a .env file in cwd or repo root for local dev. Get a key
+    at https://api.kymaapi.com/.
+    """
     env = os.environ.get("KYMA_API_KEY")
     if env:
         return env
-    env_file = Path("/Users/sonpiaz/kyma-api/.env")
-    if env_file.exists():
-        for line in env_file.read_text().splitlines():
-            if line.startswith("KYMA_API_KEY="):
-                return line.split("=", 1)[1].strip().strip('"').strip("'")
-    raise SystemExit("KYMA_API_KEY not found in env or kyma-api/.env")
+    for candidate in (Path(".env"), ROOT / ".env"):
+        if candidate.exists():
+            for line in candidate.read_text().splitlines():
+                if line.startswith("KYMA_API_KEY="):
+                    return line.split("=", 1)[1].strip().strip('"').strip("'")
+    raise SystemExit(
+        "KYMA_API_KEY not set. Export it in your shell or place it in .env "
+        "at the repo root. Get a key at https://api.kymaapi.com/"
+    )
 
 
 # ─────────── UUID helpers ───────────

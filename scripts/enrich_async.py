@@ -32,10 +32,14 @@ import duckdb
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB = ROOT / "wikipath.duckdb"
 NS = uuid.UUID("8b0e3c4f-1234-5000-8000-000000000000")
-USER_AGENT = "wikipath-enrich-async/0.1 (https://github.com/sonpiaz/wikipath; sonpiaz@gmail.com)"
+USER_AGENT = "wikipath-enrich-async/0.1 (https://github.com/start01/wikipath; sonpiaz@gmail.com)"
 WIKI_API = "https://vi.wikipedia.org/w/api.php"
 KYMA_API = "https://api.kymaapi.com/v1/chat/completions"
-LLM_MODEL = "deepseek-v4-pro"
+# Override via the LLM_MODEL env var. Default is the stable-tier DeepSeek v3
+# (verified 100% success in `bench_models.py`). Use deepseek-v4-pro for higher
+# quality when its preview tier is responsive; we found v4-pro intermittent
+# under sustained load 2026-05-10.
+LLM_MODEL = os.environ.get("LLM_MODEL", "deepseek-v3")
 
 SYMMETRIC_KINDS = {
     "spouse", "concubine",
@@ -43,16 +47,81 @@ SYMMETRIC_KINDS = {
 }
 
 
+# ─────────── Name validation (forward guard against LLM false-positives) ───────────
+#
+# Pilot 200-batch (2026-05-10) surfaced 1.7% schema-level false positives where
+# the LLM extracted generic phrases as person names ("6 anh chị em", "con trai
+# cả", bare surnames like "Phan"). Faithful-to-source but invalid as identifiers.
+# See SPEC §4.8.
+
+GENERIC_NAME_PATTERN = re.compile(
+    r"^(các |những |\d+\s)?"
+    r"(anh chị em|vợ|chồng|con( trai| gái)?|cha|mẹ|cha mẹ|"
+    r"các con|tổ tiên|hậu duệ|cháu|chắt|phu nhân|phu quân|"
+    r"con cái|con trưởng|con thứ|con cả|con út|con nuôi|con riêng)\b",
+    re.IGNORECASE,
+)
+
+# Leading honorifics to strip before validation. LLM occasionally prefixes
+# "Vua Lý Thái Tổ" or "ông Nguyễn Trãi". Stripping preserves the real name.
+HONORIFIC_PREFIX = re.compile(
+    r"^(ông|bà|vua|hoàng đế|hoàng hậu|chúa|công chúa|hoàng tử|"
+    r"thái tử|thái hậu|thái phi|đức|cụ|bác|chú|cô|dì|thầy)\s+",
+    re.IGNORECASE,
+)
+
+
+def clean_person_name(raw: str | None) -> str | None:
+    if not isinstance(raw, str):
+        return None
+    n = raw.strip()
+    # Strip surrounding quotes/parens the LLM sometimes adds
+    n = n.strip("\"'()[]{}«»“”‘’")
+    # Strip leading honorifics (one pass; rare to stack)
+    n = HONORIFIC_PREFIX.sub("", n).strip()
+    return n or None
+
+
+def is_valid_person_name(name: str | None) -> bool:
+    """Reject generic phrases, digit-laden strings, bare surnames.
+
+    Returns True iff `name` looks like a real Vietnamese person name.
+    Designed to be precision-biased: prefer rejecting questionable input
+    over admitting a generic phrase as a person identifier.
+    """
+    if not name:
+        return False
+    n = name.strip()
+    if len(n) < 4:
+        return False  # rejects "Phan", "Lê", bare surnames
+    if re.search(r"\d", n):
+        return False  # rejects "6 anh chị em", "3 con", "10 cháu"
+    if GENERIC_NAME_PATTERN.search(n.lower()):
+        return False
+    if len(n.split()) < 2:
+        return False  # VN names are 2-4 tokens; mononyms rejected (acceptable for v1)
+    return True
+
+
 def load_kyma_key() -> str:
+    """Load the Kyma API key from the KYMA_API_KEY environment variable.
+
+    The script optionally falls back to a .env file in the current working
+    directory or the repo root for local dev convenience. Production /
+    CI environments should set the env var directly.
+    """
     env = os.environ.get("KYMA_API_KEY")
     if env:
         return env
-    env_file = Path("/Users/sonpiaz/kyma-api/.env")
-    if env_file.exists():
-        for line in env_file.read_text().splitlines():
-            if line.startswith("KYMA_API_KEY="):
-                return line.split("=", 1)[1].strip().strip('"').strip("'")
-    raise SystemExit("KYMA_API_KEY not found in env or kyma-api/.env")
+    for candidate in (Path(".env"), ROOT / ".env"):
+        if candidate.exists():
+            for line in candidate.read_text().splitlines():
+                if line.startswith("KYMA_API_KEY="):
+                    return line.split("=", 1)[1].strip().strip('"').strip("'")
+    raise SystemExit(
+        "KYMA_API_KEY not set. Export it in your shell or place it in .env "
+        "at the repo root. Get a key at https://api.kymaapi.com/"
+    )
 
 
 # ─────────── UUID helpers (mirror seed_db.py) ───────────
@@ -225,6 +294,15 @@ async def llm_extract(session: aiohttp.ClientSession, article: str, name: str,
                     delay *= 2
                     continue
                 result = await resp.json()
+                if resp.status >= 400 or "error" in result:
+                    # Surface upstream errors (402 insufficient credits, 403
+                    # unauthorized, 500 server error, etc.) instead of
+                    # silently converting them into "llm parse fail".
+                    err = result.get("error", {})
+                    msg = err.get("message") if isinstance(err, dict) else str(err)
+                    print(f"  LLM HTTP {resp.status}: {msg or result}",
+                          file=sys.stderr, flush=True)
+                    return None
             content = result["choices"][0]["message"]["content"]
             try:
                 return json.loads(content)
@@ -404,9 +482,21 @@ def apply_to_db(store: Store, result: dict, *, verbose: bool = False) -> dict:
     fam = extracted.get("family") or {}
     rels = 0
     low_conf = 0
+    rejected = 0
+
+    def resolve(name_raw):
+        """Clean + validate + stub. Returns person uuid or None if invalid."""
+        nonlocal rejected
+        cleaned = clean_person_name(name_raw)
+        if not is_valid_person_name(cleaned):
+            rejected += 1
+            return None
+        return store.find_or_stub(cleaned)
 
     def add(kind, from_id, to_id, sent):
         nonlocal rels, low_conf
+        if from_id is None or to_id is None:
+            return
         conf = confidence_of(sent, article)
         if conf < 60:
             low_conf += 1
@@ -417,42 +507,43 @@ def apply_to_db(store: Store, result: dict, *, verbose: bool = False) -> dict:
 
     if isinstance(fam.get("father"), dict) and fam["father"].get("name"):
         f = fam["father"]
-        add("parent_father", primary_id,
-            store.find_or_stub(f["name"].strip()),
+        add("parent_father", primary_id, resolve(f["name"]),
             f.get("source_sentence"))
     if isinstance(fam.get("mother"), dict) and fam["mother"].get("name"):
         m = fam["mother"]
-        add("parent_mother", primary_id,
-            store.find_or_stub(m["name"].strip()),
+        add("parent_mother", primary_id, resolve(m["name"]),
             m.get("source_sentence"))
     for sp in fam.get("spouses") or []:
         if isinstance(sp, dict) and sp.get("name"):
-            add("spouse", primary_id,
-                store.find_or_stub(sp["name"].strip()),
+            add("spouse", primary_id, resolve(sp["name"]),
                 sp.get("source_sentence"))
     for ch in fam.get("children") or []:
         if isinstance(ch, dict) and ch.get("name"):
-            add("parent_father",
-                store.find_or_stub(ch["name"].strip()),
+            add("parent_father", resolve(ch["name"]),
                 primary_id, ch.get("source_sentence"))
     for sb in fam.get("siblings") or []:
         if isinstance(sb, dict) and sb.get("name"):
-            add("sibling_full", primary_id,
-                store.find_or_stub(sb["name"].strip()),
+            add("sibling_full", primary_id, resolve(sb["name"]),
                 sb.get("source_sentence"))
-    return {"rels": rels, "low_conf": low_conf,
+    return {"rels": rels, "low_conf": low_conf, "rejected": rejected,
             "bio_chars": len(updates.get("bio_short", ""))}
 
 
-async def main_async(candidates, key, concurrency: int):
+async def main_async(candidates, key, concurrency: int, store, checkpoint_every: int):
+    """Stream LLM results into the DB as they complete.
+
+    Crash-safe: writes happen incrementally with a CHECKPOINT every
+    `checkpoint_every` successful results, so a SIGKILL mid-stream loses at
+    most the last partial batch instead of the entire run.
+    """
     sem = asyncio.Semaphore(concurrency)
     timeout = aiohttp.ClientTimeout(total=180)
     connector = aiohttp.TCPConnector(limit=concurrency * 2)
+    totals = {"ok": 0, "fail": 0, "rels": 0, "low_conf": 0,
+              "rejected": 0, "bio_chars": 0, "since_checkpoint": 0}
     async with aiohttp.ClientSession(timeout=timeout, connector=connector) as session:
         tasks = [fetch_and_extract(session, sem, c, key) for c in candidates]
-        # Stream results as they finish
         done = 0
-        results = []
         for coro in asyncio.as_completed(tasks):
             r = await coro
             done += 1
@@ -461,8 +552,23 @@ async def main_async(candidates, key, concurrency: int):
             print(f"[{done}/{len(candidates)}] {status} {cand['label']}"
                   f"{' (' + r.get('reason', '') + ')' if not r.get('ok') else ''}",
                   flush=True)
-            results.append(r)
-        return results
+            if r.get("ok"):
+                stats = apply_to_db(store, r)
+                totals["ok"] += 1
+                totals["rels"] += stats["rels"]
+                totals["low_conf"] += stats["low_conf"]
+                totals["rejected"] += stats.get("rejected", 0)
+                totals["bio_chars"] += stats["bio_chars"]
+                totals["since_checkpoint"] += 1
+                if totals["since_checkpoint"] >= checkpoint_every:
+                    store.con.execute("CHECKPOINT")
+                    totals["since_checkpoint"] = 0
+            else:
+                totals["fail"] += 1
+        # Final checkpoint for tail batch
+        if totals["since_checkpoint"] > 0:
+            store.con.execute("CHECKPOINT")
+    return totals
 
 
 def main():
@@ -470,47 +576,33 @@ def main():
     ap.add_argument("--db", type=Path, default=DEFAULT_DB)
     ap.add_argument("--candidates", type=Path, required=True)
     ap.add_argument("--concurrency", type=int, default=10)
+    ap.add_argument("--checkpoint-every", type=int, default=50,
+                    help="commit + CHECKPOINT every N successful writes")
     args = ap.parse_args()
 
     candidates = json.loads(args.candidates.read_text())
-    print(f"loaded {len(candidates)} candidates")
+    print(f"loaded {len(candidates)} candidates (model: {LLM_MODEL})")
 
     key = load_kyma_key()
-    t0 = time.time()
-    results = asyncio.run(main_async(candidates, key, args.concurrency))
-    fetch_t = time.time() - t0
-    print(f"\nfetched + extracted in {fetch_t:.1f}s")
-
-    # Apply to DB sequentially (DuckDB single writer)
     con = duckdb.connect(str(args.db))
     store = Store(con)
     init_persons = con.execute("SELECT COUNT(*) FROM person").fetchone()[0]
     init_rels = con.execute("SELECT COUNT(*) FROM relation").fetchone()[0]
 
-    summary = {"ok": 0, "fail": 0}
-    rel_total = 0
-    low_conf_total = 0
-    bio_total = 0
-    for r in results:
-        if r.get("ok"):
-            stats = apply_to_db(store, r)
-            summary["ok"] += 1
-            rel_total += stats["rels"]
-            low_conf_total += stats["low_conf"]
-            bio_total += stats["bio_chars"]
-        else:
-            summary["fail"] += 1
-    con.execute("CHECKPOINT")
-
+    t0 = time.time()
+    totals = asyncio.run(main_async(candidates, key, args.concurrency,
+                                     store, args.checkpoint_every))
+    total_t = time.time() - t0
     final_persons = con.execute("SELECT COUNT(*) FROM person").fetchone()[0]
     final_rels = con.execute("SELECT COUNT(*) FROM relation").fetchone()[0]
-    total_t = time.time() - t0
 
     print()
-    print(f"SUMMARY: ok={summary['ok']} fail={summary['fail']} "
-          f"in {total_t:.1f}s (~{total_t / max(1, len(results)):.1f}s/profile avg)")
-    print(f"BIO ADDED: {summary['ok']} bios, ~{bio_total // max(1, summary['ok'])} chars avg")
-    print(f"RELATIONS: +{rel_total} (low_conf flagged: {low_conf_total})")
+    print(f"SUMMARY: ok={totals['ok']} fail={totals['fail']} "
+          f"in {total_t:.1f}s (~{total_t / max(1, totals['ok'] + totals['fail']):.1f}s/profile avg)")
+    print(f"BIO ADDED: {totals['ok']} bios, "
+          f"~{totals['bio_chars'] // max(1, totals['ok'])} chars avg")
+    print(f"RELATIONS: +{totals['rels']} (low_conf flagged: {totals['low_conf']}, "
+          f"name-rejected: {totals['rejected']})")
     print(f"PERSONS:   {init_persons} → {final_persons} (+{final_persons - init_persons})")
     print(f"RELS:      {init_rels} → {final_rels} (+{final_rels - init_rels})")
 

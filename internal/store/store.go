@@ -113,7 +113,7 @@ func (s *Store) Search(ctx context.Context, q string, limit int) (*SearchResult,
 			       era, dynasty, current_family_name, lineage_branch,
 			       trust_score, primary_source
 			FROM person
-			WHERE birth_name IS NOT NULL AND birth_name != '' AND NOT regexp_matches(birth_name, '^Q[0-9]+$')
+			WHERE birth_name IS NOT NULL AND birth_name != '' AND NOT regexp_matches(birth_name, '^Q?[0-9]+$')
 			ORDER BY
 			    (wikidata_qid IS NOT NULL) DESC,
 			    trust_score DESC,
@@ -314,7 +314,7 @@ func (s *Store) GetTree(ctx context.Context, idOrQID string, upN, downN int) (*T
 	row := s.db.QueryRowContext(ctx, `
 		SELECT id::VARCHAR, birth_name FROM person
 		WHERE (id::VARCHAR = ? OR wikidata_qid = ?)
-		  AND birth_name IS NOT NULL AND birth_name != '' AND NOT regexp_matches(birth_name, '^Q[0-9]+$')
+		  AND birth_name IS NOT NULL AND birth_name != '' AND NOT regexp_matches(birth_name, '^Q?[0-9]+$')
 		LIMIT 1
 	`, idOrQID, idOrQID)
 	if err := row.Scan(&egoID, &egoName); err != nil {
@@ -438,7 +438,7 @@ func (s *Store) loadAndAddNode(ctx context.Context, id string, t *Tree, seen map
 		       birth_date_y, death_date_y, era, dynasty, gender, avatar_url
 		FROM person
 		WHERE id::VARCHAR = ?
-		  AND birth_name IS NOT NULL AND birth_name != '' AND NOT regexp_matches(birth_name, '^Q[0-9]+$')
+		  AND birth_name IS NOT NULL AND birth_name != '' AND NOT regexp_matches(birth_name, '^Q?[0-9]+$')
 	`, id)
 	var n TreeNode
 	var qid, dyn, avatar sql.NullString
@@ -617,7 +617,7 @@ func (s *Store) GetPersonDetail(ctx context.Context, idOrQID string) (*PersonDet
 		       trust_score, primary_source
 		FROM person
 		WHERE (id::VARCHAR = ? OR wikidata_qid = ?)
-		  AND birth_name IS NOT NULL AND birth_name != '' AND NOT regexp_matches(birth_name, '^Q[0-9]+$')
+		  AND birth_name IS NOT NULL AND birth_name != '' AND NOT regexp_matches(birth_name, '^Q?[0-9]+$')
 		LIMIT 1
 	`, idOrQID, idOrQID)
 

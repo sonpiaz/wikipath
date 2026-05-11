@@ -203,7 +203,7 @@ func (s *Store) GetTrending(ctx context.Context, windowDays, limit int) ([]Trend
 		FROM counts c
 		JOIN person p ON p.id = c.person_id
 		WHERE p.birth_name IS NOT NULL AND p.birth_name != ''
-		  AND NOT regexp_matches(p.birth_name, '^Q[0-9]+$')
+		  AND NOT regexp_matches(p.birth_name, '^Q?[0-9]+$')
 		ORDER BY score DESC
 		LIMIT ?
 	`, windowDays, limit)

@@ -1,0 +1,473 @@
+{
+  "summary": {
+    "total": 995,
+    "passed": 939,
+    "failed": 56,
+    "pass_rate": 0.9437,
+    "failures_by_rule": {
+      "L3": 37,
+      "L1": 22,
+      "L6": 1,
+      "L5": 5
+    }
+  },
+  "failed_rows": [
+    {
+      "id": "cc5eb109-0171-582f-87c6-5e65e277ee34",
+      "name": "Trương Thanh Hằng",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Cựu vận động viên điền kinh Việt Nam, từng được gọi là Nữ hoàng tốc độ và cô gái vàng của điền kinh Việt Nam."
+    },
+    {
+      "id": "33302c25-e5c4-573e-bf94-73cd30cae7a2",
+      "name": "Ngô Đình Lệ Quyên",
+      "fails": [
+        "L1:too_short(54)",
+        "L3:name_missing"
+      ],
+      "bio": "Luật sư, từng là Ủy viên Di Trú cho thành phố Roma, Ý."
+    },
+    {
+      "id": "ef4e923a-16ac-55c8-b505-f43f586d9385",
+      "name": "Đặng Hữu Phúc",
+      "fails": [
+        "L1:too_short(57)"
+      ],
+      "bio": "Đặng Hữu Phúc là một nhà soạn nhạc, nhạc sĩ của Việt Nam."
+    },
+    {
+      "id": "43cfb023-17c6-578c-94cb-965d560b3062",
+      "name": "Đa Minh Nguyễn Tuấn Anh",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Giám mục Công giáo Việt Nam, Giám mục Phụ tá Giáo phận Xuân Lộc, Chủ tịch Uỷ ban Truyền thông Xã hội Hội đồng Giám mục Việt Nam (2025–2028)."
+    },
+    {
+      "id": "31fac066-636f-5941-8c6e-87ca6688a5a2",
+      "name": "Nguyễn Văn Cốc",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Trung tướng Quân đội nhân dân Việt Nam, Anh hùng lực lượng vũ trang nhân dân, phi công MiG-21 huyền thoại bắn hạ nhiều máy bay Mỹ."
+    },
+    {
+      "id": "c0645bab-b04c-5228-9154-a8dc75cad710",
+      "name": "Nguyễn Phúc Luân",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Thân phụ vua Gia Long, được truy phong Hưng Tổ Hiếu Khang Hoàng đế."
+    },
+    {
+      "id": "a738732b-ba09-5d61-89eb-2562242ba916",
+      "name": "Nguyễn Thị Huyền",
+      "fails": [
+        "L6:bio_birth_drift(1985!=1993)"
+      ],
+      "bio": "Nguyễn Thị Huyền (sinh năm 1993) là nữ vận động viên điền kinh Việt Nam nổi tiếng với các nội dung 400m và 400m chạy vượt rào, được mệnh danh là 'nữ hoàng điền kinh' của Việt Nam."
+    },
+    {
+      "id": "4522677a-7c2d-5ad1-9d2d-e702b7a6bcce",
+      "name": "Đặng Văn Thành",
+      "fails": [
+        "L1:too_short(54)",
+        "L3:name_missing"
+      ],
+      "bio": "Cầu thủ bóng đá nam Việt Nam, tiền đạo, sinh năm 1984."
+    },
+    {
+      "id": "d1d8b4c6-d1e7-5fa0-a862-48d0dd233000",
+      "name": "Ngần Ngọc Nghĩa",
+      "fails": [
+        "L1:too_short(56)"
+      ],
+      "bio": "Ngần Ngọc Nghĩa là một vận động viên điền kinh Việt Nam."
+    },
+    {
+      "id": "60b958bf-5531-59e5-9c4d-c2d17de49cd0",
+      "name": "Hoàng Thị Minh Hồng",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Nhà hoạt động môi trường người Việt Nam, sáng lập và là Giám đốc tổ chức CHANGE, người Việt Nam đầu tiên đặt chân lên Nam Cực năm 1997."
+    },
+    {
+      "id": "9ffd1bac-f0dd-510e-aa7c-a90d33769ee4",
+      "name": "Nguyễn Lạc Hóa",
+      "fails": [
+        "L5:bio_range_birth(1908!=1901)"
+      ],
+      "bio": "Nguyễn Lạc Hóa (1901-1993) là một linh mục Công giáo Việt Nam, người thành lập Biệt khu Hải Yến chống cộng ở bán đảo Cà Mau."
+    },
+    {
+      "id": "571be408-4e5c-558d-aa77-cf54f407c56d",
+      "name": "Châu Phong Hòa",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Cựu cầu thủ bóng đá người Việt Nam, từng là tuyển thủ đội tuyển Olympic Việt Nam, đoạt chức vô địch và danh hiệu Cầu thủ xuất sắc nhất Giải vô địch U-18 Quốc gia năm 2003."
+    },
+    {
+      "id": "d0806746-23fd-5bfb-a8a8-8ebc7185e7b3",
+      "name": "Nguyễn Thùy Linh",
+      "fails": [
+        "L1:too_short(52)"
+      ],
+      "bio": "Nguyễn Thùy Linh là vận động viên cầu lông Việt Nam."
+    },
+    {
+      "id": "bb59f38c-86a3-5254-a6c9-4101ddda554d",
+      "name": "Nguyễn Phan Long",
+      "fails": [
+        "L5:bio_range_birth(1889!=1888)"
+      ],
+      "bio": "Nguyễn Phan Long (1888 – 1960) là một nhà báo, nhà hoạt động chính trị Việt Nam nửa đầu thế kỷ 20. Ông từng được Quốc trưởng Bảo Đại chỉ định làm Thủ tướng đầu tiên của chính phủ Quốc gia Việt Nam kiêm Tổng trưởng Nội vụ trong một thời gian ngắn."
+    },
+    {
+      "id": "112625b3-134e-5bd6-88c8-565983511b38",
+      "name": "Giuse Vũ Duy Thống",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Giám mục Công giáo người Việt, từng là giám mục chính tòa Giáo phận Phan Thiết, giám mục phụ tá Tổng giáo phận Thành phố Hồ Chí Minh, chủ tịch Ủy ban Văn hóa Hội đồng Giám mục Việt Nam, và là nhà văn, nhạc sĩ thánh ca."
+    },
+    {
+      "id": "947acc96-23fa-5d93-acef-906a50af24db",
+      "name": "Lê Quốc Quân",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Luật sư, blogger và nhân vật bất đồng chính kiến Việt Nam, được xem là một nhà hoạt động xã hội nhân quyền."
+    },
+    {
+      "id": "6d8f50e4-b666-5028-89c2-66f9b0e37fb8",
+      "name": "Lê Thần Tông",
+      "fails": [
+        "L5:bio_range_birth(1607!=1608)"
+      ],
+      "bio": "Lê Thần Tông (1608-1662), tên húy Lê Duy Kỳ, là vị hoàng đế thứ sáu của nhà Lê Trung hưng và thứ 17 của nhà Hậu Lê. Ông là vị vua Việt Nam duy nhất hai lần lên ngôi và có bốn người con đều làm vua."
+    },
+    {
+      "id": "4ec98f88-af64-55cc-9f1d-72dde720196b",
+      "name": "Giuse Trần Văn Toản",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Giám mục Công giáo người Việt Nam, giám mục chính tòa Giáo phận Long Xuyên từ năm 2019."
+    },
+    {
+      "id": "560add5c-046f-5fa1-b7f7-857d35c003a9",
+      "name": "Cẩm Vân",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Ca sĩ nữ với chất giọng khỏe, chuyên hát nhạc trữ tình, truyền thống và nhạc Trịnh Công Sơn, được xem là cánh chim đầu đàn của thế hệ ca sĩ trẻ sau 1975."
+    },
+    {
+      "id": "4926b102-91e9-569e-afdd-c8800fd1faa6",
+      "name": "Phanxicô Xaviê Nguyễn Văn Thuận",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Hồng y người Việt Nam thuộc Giáo hội Công giáo Rôma, từng là Chủ tịch Hội đồng Giáo hoàng về Công lý và Hòa bình."
+    },
+    {
+      "id": "01863e02-8d48-590a-813f-1d1d243af67d",
+      "name": "Jason Pendant",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Cầu thủ bóng đá người Việt-Pháp đang thi đấu ở vị trí hậu vệ trái cho câu lạc bộ Công an Hà Nội và đội tuyển quốc gia Việt Nam."
+    },
+    {
+      "id": "a50be6fb-5c35-54af-bc1f-507b430f3134",
+      "name": "Trần Văn Trà",
+      "fails": [
+        "L5:bio_range_birth(1918!=1919)"
+      ],
+      "bio": "Trần Văn Trà (1919-1996) là Thượng tướng Quân đội nhân dân Việt Nam, Thứ trưởng Bộ Quốc phòng, Tư lệnh Quân Giải phóng miền Nam trong Chiến tranh Việt Nam."
+    },
+    {
+      "id": "3e82378c-2e83-5e00-8071-2af9ebdd8b93",
+      "name": "Trung Dân",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Nam diễn viên Việt Nam, sinh ngày 20 tháng 7 năm 1967 tại xã Nhị Bình, huyện Hóc Môn, tỉnh Gia Định (nay là xã Hóc Môn, TP.HCM) trong gia đình làm nghề nông. Tốt nghiệp khóa diễn viên Trường Nghệ thuật Sân khấu II năm 1992."
+    },
+    {
+      "id": "24cf4c8d-be84-53fc-94e7-af6deb97d6c4",
+      "name": "Trọng Hiếu",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Nam ca sĩ kiêm vũ công người Đức gốc Việt, quán quân Vietnam Idol mùa thứ sáu, từng được đề cử tại giải Cống hiến."
+    },
+    {
+      "id": "0088a7e9-3cbe-5ce3-b8a5-91517008025b",
+      "name": "Trần Hữu Dũng",
+      "fails": [
+        "L5:bio_range_birth(1946!=1945)"
+      ],
+      "bio": "Trần Hữu Dũng (1945–2023) là giáo sư kinh tế học gốc Việt tại Đại học Wright State, chuyên nghiên cứu kinh tế Đông Á và Việt Nam."
+    },
+    {
+      "id": "f2802ec1-2a00-593b-92e7-c967fb5de57c",
+      "name": "Siu Black",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Ca sĩ, diễn viên điện ảnh, MC người Việt Nam theo phong cách nhạc rock, được mệnh danh là Họa mi của núi rừng Tây Nguyên."
+    },
+    {
+      "id": "73b3b2b8-0d95-5bbd-beb0-6086f0fb68dc",
+      "name": "Nguyễn Sinh Cung",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Lãnh tụ phong trào Cộng sản Việt Nam, Chủ tịch nước VNDCCH (1945–1969)."
+    },
+    {
+      "id": "650d90ec-5122-55d5-94e4-4712ef53dfe4",
+      "name": "Nguyễn Trãi",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Khai quốc công thần nhà Hậu Lê, tác giả Bình Ngô đại cáo. Bị tru di tam tộc oan."
+    },
+    {
+      "id": "885a0462-7f11-501d-893f-3f0f2b4a5fa9",
+      "name": "Nguyễn Huệ",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Em út trong ba anh em Tây Sơn, đại thắng quân Thanh năm Kỷ Dậu (1789)."
+    },
+    {
+      "id": "746375f5-7c1c-5520-b6e6-c197bb4847b9",
+      "name": "Nguyễn Văn Cúc",
+      "fails": [
+        "L1:too_short(49)",
+        "L3:name_missing"
+      ],
+      "bio": "TBT ĐCS Việt Nam (1986–1991), khởi xướng Đổi Mới."
+    },
+    {
+      "id": "33895f04-8048-5891-a3e4-ba54f9f8317d",
+      "name": "Nông Đức Mạnh",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "TBT ĐCS Việt Nam (2001–2011). Người dân tộc Tày đầu tiên giữ chức TBT."
+    },
+    {
+      "id": "bdef334c-60eb-581f-b3cc-438128a64b32",
+      "name": "Nguyễn Phú Trọng",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "TBT ĐCS Việt Nam (2011–2024). Lãnh đạo lâu nhất sau Lê Duẩn."
+    },
+    {
+      "id": "04fd5d1e-0965-591b-8180-ec81b09737e4",
+      "name": "Võ Nguyên Giáp",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Đại tướng đầu tiên Quân đội Nhân dân Việt Nam, chỉ huy chiến thắng Điện Biên Phủ 1954."
+    },
+    {
+      "id": "2bb2526b-0521-512f-bce9-40d98698be02",
+      "name": "Ngô Đình Thục",
+      "fails": [
+        "L1:too_short(42)"
+      ],
+      "bio": "Anh trai Ngô Đình Diệm, Tổng giám mục Huế."
+    },
+    {
+      "id": "77b5896c-d240-5cf8-84d2-e7d072675e4b",
+      "name": "Lê Nguyên Long",
+      "fails": [
+        "L1:too_short(56)"
+      ],
+      "bio": "Vua thứ hai nhà Hậu Lê, mất trẻ trong vụ án Lệ Chi Viên."
+    },
+    {
+      "id": "e7d4dd4a-8ee3-5cd1-91af-c96d3463fd66",
+      "name": "Lý Nhật Tôn",
+      "fails": [
+        "L1:too_short(56)"
+      ],
+      "bio": "Vua thứ ba nhà Lý, đổi tên nước thành Đại Việt năm 1054."
+    },
+    {
+      "id": "1464ac43-4696-5c97-a80a-b5aa9619e682",
+      "name": "Trần Lệ Xuân",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Vợ Ngô Đình Nhu, \"Đệ nhất phu nhân\" thời chính phủ Diệm. Còn gọi là Madame Nhu."
+    },
+    {
+      "id": "e4a4f8c4-7e12-5e77-bfb1-5b8a6ff62436",
+      "name": "Nguyễn Phúc Vĩnh Thụy",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Vua cuối cùng của Việt Nam, thoái vị tháng 8/1945. Sống lưu vong ở Pháp."
+    },
+    {
+      "id": "e1117cbc-e3e7-54a2-92a3-87ce45c7028e",
+      "name": "Ngô Đình Diệm",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Tổng thống đầu tiên Việt Nam Cộng hòa (1955–1963), bị đảo chính giết."
+    },
+    {
+      "id": "d67c8e83-c690-50ae-9b25-bfceaab150bb",
+      "name": "Nguyễn Nhạc",
+      "fails": [
+        "L1:too_short(54)",
+        "L3:name_missing"
+      ],
+      "bio": "Anh cả ba anh em Tây Sơn, vua đầu Trung ương Hoàng đế."
+    },
+    {
+      "id": "a9b3330d-efdc-5550-9882-5956c5bc825f",
+      "name": "Nguyễn Duy Cống",
+      "fails": [
+        "L1:too_short(29)",
+        "L3:name_missing"
+      ],
+      "bio": "TBT ĐCS Việt Nam (1991–1997)."
+    },
+    {
+      "id": "6e1aeb8a-f896-58f9-9779-6e70172c9803",
+      "name": "Lê Duẩn",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "TBT ĐCS Việt Nam (1960–1986), kiến trúc sư chính sách thống nhất đất nước."
+    },
+    {
+      "id": "60b6062f-e29a-5ee7-9299-47cd9a17f133",
+      "name": "Đặng Xuân Khu",
+      "fails": [
+        "L1:too_short(54)"
+      ],
+      "bio": "TBT Đảng Cộng sản Việt Nam (1956–1986 không liên tục)."
+    },
+    {
+      "id": "e9f3fcc7-7d9a-56c4-98e6-0b8ed0067700",
+      "name": "Ngô Đình Luyện",
+      "fails": [
+        "L1:too_short(51)"
+      ],
+      "bio": "Em út trong gia đình Ngô Đình, đại sứ VNCH tại Anh."
+    },
+    {
+      "id": "68eb0b85-37f8-5619-8feb-1aff5c9da3d5",
+      "name": "Ngô Đình Khả",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Quan triều Nguyễn, Phụ chính của vua Thành Thái, cha của 6 con trai bao gồm Diệm và Nhu."
+    },
+    {
+      "id": "93dc49e5-ee1a-5e59-8a02-60ed2910160c",
+      "name": "Nguyễn Sinh Khiêm",
+      "fails": [
+        "L1:too_short(56)",
+        "L3:name_missing"
+      ],
+      "bio": "Anh trai Hồ Chí Minh, từng bị thực dân Pháp đày Côn Đảo."
+    },
+    {
+      "id": "111c88be-42de-502a-8276-4dec49e46362",
+      "name": "Nguyễn Thị Thanh",
+      "fails": [
+        "L1:too_short(51)",
+        "L3:name_missing"
+      ],
+      "bio": "Chị cả Hồ Chí Minh, hoạt động kháng Pháp ở Nghệ An."
+    },
+    {
+      "id": "f7af7e78-24a8-5ddb-80f0-c7e663f1371e",
+      "name": "Hoàng Thị Loan",
+      "fails": [
+        "L1:too_short(55)",
+        "L3:name_missing"
+      ],
+      "bio": "Mẹ Hồ Chí Minh, dệt vải nuôi gia đình khi chồng đi học."
+    },
+    {
+      "id": "1d04c8b4-3f76-52e8-a979-2c262f4a9acf",
+      "name": "Nguyễn Sinh Sắc",
+      "fails": [
+        "L1:too_short(59)"
+      ],
+      "bio": "Cha Hồ Chí Minh, phó bảng triều Nguyễn, tri huyện Bình Khê."
+    },
+    {
+      "id": "7250eaf6-1f8b-5305-9ec9-e7a35feb38b5",
+      "name": "Nguyễn Hữu Thị Lan",
+      "fails": [
+        "L1:too_short(51)",
+        "L3:name_missing"
+      ],
+      "bio": "Hoàng hậu cuối cùng của Việt Nam, vợ chính Bảo Đại."
+    },
+    {
+      "id": "9cea46b6-d7c5-5d83-b660-42c3631843bb",
+      "name": "Nguyễn Phúc Hồng Cai",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Em vua Tự Đức, Kiến Thái Vương, cha vua Hàm Nghi và Đồng Khánh."
+    },
+    {
+      "id": "2d1d3e72-25a1-5114-a4a7-00cbf191f522",
+      "name": "Nguyễn Phúc Miên Tông",
+      "fails": [
+        "L1:too_short(52)"
+      ],
+      "bio": "Vua thứ ba triều Nguyễn, cha của Tự Đức và Hồng Cai."
+    },
+    {
+      "id": "7b8d2f73-aea7-5b05-aedd-99cc8a1c8de7",
+      "name": "Nguyễn Lữ",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Em thứ hai trong ba anh em Tây Sơn, Đông Định Vương cai quản Gia Định."
+    },
+    {
+      "id": "71b99bc9-5af3-54ce-9028-fefa06d05aa0",
+      "name": "Lê Lợi",
+      "fails": [
+        "L1:too_short(48)"
+      ],
+      "bio": "Lãnh tụ khởi nghĩa Lam Sơn, sáng lập nhà Hậu Lê."
+    },
+    {
+      "id": "7b473bc0-ada2-5887-a919-17bab6cc2b81",
+      "name": "Lý Càn Đức",
+      "fails": [
+        "L1:too_short(50)"
+      ],
+      "bio": "Vua thứ tư nhà Lý, trị vì 56 năm dài nhất sử Việt."
+    },
+    {
+      "id": "c172877e-c1f2-50ea-8a66-96c88c3709a8",
+      "name": "Lý Phật Mã",
+      "fails": [
+        "L1:too_short(51)"
+      ],
+      "bio": "Vua thứ hai nhà Lý, mở rộng pháp luật và Phật giáo."
+    }
+  ]
+}

@@ -1,17 +1,138 @@
 {
   "summary": {
-    "total": 995,
-    "passed": 939,
-    "failed": 56,
-    "pass_rate": 0.9437,
+    "total": 1650,
+    "passed": 1585,
+    "failed": 65,
+    "pass_rate": 0.9606,
     "failures_by_rule": {
-      "L3": 37,
-      "L1": 22,
-      "L6": 1,
-      "L5": 5
+      "L6": 2,
+      "L3": 42,
+      "L5": 2,
+      "L7": 2,
+      "L1": 26
     }
   },
   "failed_rows": [
+    {
+      "id": "13a22c90-ab7c-5380-a529-d47a9d6a3849",
+      "name": "Nguyễn Văn Toàn",
+      "fails": [
+        "L6:bio_birth_drift(1932!=1996)"
+      ],
+      "bio": "Nguyễn Văn Toàn (sinh ngày 12 tháng 4 năm 1996) là một cầu thủ bóng đá chuyên nghiệp người Việt Nam hiện đang thi đấu ở vị trí tiền đạo cánh cho câu lạc bộ V.League 1 Thép Xanh Nam Định và đội tuyển bóng đá quốc gia Việt Nam."
+    },
+    {
+      "id": "80ffea44-5954-5a6f-988f-ee2d26be2e37",
+      "name": "Hoàng Hà",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Nữ diễn viên người Việt Nam, nổi tiếng từ vai Dao Ánh trong phim 'Em và Trịnh' (2022)."
+    },
+    {
+      "id": "f84f79de-aff8-5c41-b5c1-4e7610f56297",
+      "name": "Paul-Nưr",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Paul Nưr (1925–?) là giáo viên, công chức, lãnh đạo người Thượng dân tộc Ba Na, từng giữ chức Tổng trưởng Bộ Phát triển Sắc tộc Việt Nam Cộng hòa từ năm 1967 đến năm 1971."
+    },
+    {
+      "id": "bf74b389-0d4e-51e2-9f82-24d57b7081d2",
+      "name": "Trần Quốc Vượng",
+      "fails": [
+        "L5:bio_range_birth(1953!=1934)"
+      ],
+      "bio": "Trần Quốc Vượng (1934–2005) là một nhà sử học, khảo cổ học người Việt Nam, một trong 'tứ trụ' sử học Việt Nam đương đại."
+    },
+    {
+      "id": "ce2e17ed-aa76-5306-8df0-b1eec3b1be7e",
+      "name": "Nguyễn Đỗ Mục",
+      "fails": [
+        "L7:first_person"
+      ],
+      "bio": "Nguyễn Đỗ Mục (1882 – 1951), tự Trọng Hữu, bút hiệu Hì Đình Nguyễn Văn Tôi, là nhà văn và dịch giả Việt Nam."
+    },
+    {
+      "id": "daabeff5-eb28-539e-8923-db4593aa601b",
+      "name": "Phùng Khánh Linh",
+      "fails": [
+        "L7:first_person"
+      ],
+      "bio": "Phùng Khánh Linh (sinh ngày 7 tháng 5 năm 1994) là một nữ ca sĩ kiêm sáng tác nhạc người Việt Nam. Nổi lên từ chương trình Giọng hát Việt mùa ba, năm 2018, cô được nhiều khán giả biết tới với bản hit 'Hôm nay tôi buồn'."
+    },
+    {
+      "id": "56e02d40-d61a-594f-8cfc-f9fdd6a60e88",
+      "name": "Đinh Xuân Việt",
+      "fails": [
+        "L1:too_short(57)"
+      ],
+      "bio": "Đinh Xuân Việt là một cựu cầu thủ bóng đá người Việt Nam."
+    },
+    {
+      "id": "4017572b-8786-5903-b84e-d47b36a7cacf",
+      "name": "Nguyễn Tăng Tuấn",
+      "fails": [
+        "L1:too_short(49)"
+      ],
+      "bio": "Nguyễn Tăng Tuấn là một cầu thủ bóng đá Việt Nam."
+    },
+    {
+      "id": "3f94c5ca-0954-5936-b760-1bdb7c389686",
+      "name": "Trịnh Bửu Hoài",
+      "fails": [
+        "L1:too_short(57)"
+      ],
+      "bio": "Trịnh Bửu Hoài là một nhà thơ, nhà văn, nhà báo Việt Nam."
+    },
+    {
+      "id": "45aa4bb1-44b0-5a57-8e58-a1ca766f63e4",
+      "name": "Hậu Hoàng",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Nữ YouTuber kiêm vũ công người Việt Nam nổi tiếng với các video nhạc chế."
+    },
+    {
+      "id": "f168e3cc-4301-5478-845e-bdc36be9d721",
+      "name": "Nguyễn Ngọc Ngạn",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Nhà văn, cựu dẫn chương trình người Canada gốc Việt, MC của Paris by Night từ 1992 đến 2022."
+    },
+    {
+      "id": "967d8013-fa8a-577a-851f-2901f68a36fb",
+      "name": "Mai Phương",
+      "fails": [
+        "L5:bio_range_birth(1999!=1985)"
+      ],
+      "bio": "Mai Phương (1985–2020) là một nữ diễn viên, người dẫn chương trình và ca sĩ người Việt Nam."
+    },
+    {
+      "id": "6da1405f-5071-5654-a86d-e48c6449b865",
+      "name": "Phạm Lực",
+      "fails": [
+        "L1:too_short(44)"
+      ],
+      "bio": "Phạm Lực (Huế, 1943) là một họa sĩ Việt Nam."
+    },
+    {
+      "id": "575768ca-fbdf-5552-ba51-64f436c5561c",
+      "name": "Nguyễn Văn Bình",
+      "fails": [
+        "L6:bio_birth_drift(1939!=1961)"
+      ],
+      "bio": "Nguyễn Văn Bình (sinh 1961) là chính khách Việt Nam, nguyên Ủy viên Bộ Chính trị, Bí thư Trung ương Đảng, Trưởng ban Kinh tế Trung ương, nguyên Thống đốc Ngân hàng Nhà nước."
+    },
+    {
+      "id": "ed98bdb8-cc1c-5014-be83-f5228aeb5f3d",
+      "name": "Đái Duy Ban",
+      "fails": [
+        "L3:name_missing"
+      ],
+      "bio": "Giáo sư, Viện sĩ, Tiến sĩ khoa học, Bác sĩ, nguyên giám đốc Trung tâm nghiên cứu Hóa Sinh ứng dụng Viện Khoa học Việt Nam và Chủ tịch Hội Hóa Sinh Y học Việt Nam."
+    },
     {
       "id": "cc5eb109-0171-582f-87c6-5e65e277ee34",
       "name": "Trương Thanh Hằng",
@@ -62,14 +183,6 @@
       "bio": "Thân phụ vua Gia Long, được truy phong Hưng Tổ Hiếu Khang Hoàng đế."
     },
     {
-      "id": "a738732b-ba09-5d61-89eb-2562242ba916",
-      "name": "Nguyễn Thị Huyền",
-      "fails": [
-        "L6:bio_birth_drift(1985!=1993)"
-      ],
-      "bio": "Nguyễn Thị Huyền (sinh năm 1993) là nữ vận động viên điền kinh Việt Nam nổi tiếng với các nội dung 400m và 400m chạy vượt rào, được mệnh danh là 'nữ hoàng điền kinh' của Việt Nam."
-    },
-    {
       "id": "4522677a-7c2d-5ad1-9d2d-e702b7a6bcce",
       "name": "Đặng Văn Thành",
       "fails": [
@@ -95,14 +208,6 @@
       "bio": "Nhà hoạt động môi trường người Việt Nam, sáng lập và là Giám đốc tổ chức CHANGE, người Việt Nam đầu tiên đặt chân lên Nam Cực năm 1997."
     },
     {
-      "id": "9ffd1bac-f0dd-510e-aa7c-a90d33769ee4",
-      "name": "Nguyễn Lạc Hóa",
-      "fails": [
-        "L5:bio_range_birth(1908!=1901)"
-      ],
-      "bio": "Nguyễn Lạc Hóa (1901-1993) là một linh mục Công giáo Việt Nam, người thành lập Biệt khu Hải Yến chống cộng ở bán đảo Cà Mau."
-    },
-    {
       "id": "571be408-4e5c-558d-aa77-cf54f407c56d",
       "name": "Châu Phong Hòa",
       "fails": [
@@ -119,14 +224,6 @@
       "bio": "Nguyễn Thùy Linh là vận động viên cầu lông Việt Nam."
     },
     {
-      "id": "bb59f38c-86a3-5254-a6c9-4101ddda554d",
-      "name": "Nguyễn Phan Long",
-      "fails": [
-        "L5:bio_range_birth(1889!=1888)"
-      ],
-      "bio": "Nguyễn Phan Long (1888 – 1960) là một nhà báo, nhà hoạt động chính trị Việt Nam nửa đầu thế kỷ 20. Ông từng được Quốc trưởng Bảo Đại chỉ định làm Thủ tướng đầu tiên của chính phủ Quốc gia Việt Nam kiêm Tổng trưởng Nội vụ trong một thời gian ngắn."
-    },
-    {
       "id": "112625b3-134e-5bd6-88c8-565983511b38",
       "name": "Giuse Vũ Duy Thống",
       "fails": [
@@ -141,14 +238,6 @@
         "L3:name_missing"
       ],
       "bio": "Luật sư, blogger và nhân vật bất đồng chính kiến Việt Nam, được xem là một nhà hoạt động xã hội nhân quyền."
-    },
-    {
-      "id": "6d8f50e4-b666-5028-89c2-66f9b0e37fb8",
-      "name": "Lê Thần Tông",
-      "fails": [
-        "L5:bio_range_birth(1607!=1608)"
-      ],
-      "bio": "Lê Thần Tông (1608-1662), tên húy Lê Duy Kỳ, là vị hoàng đế thứ sáu của nhà Lê Trung hưng và thứ 17 của nhà Hậu Lê. Ông là vị vua Việt Nam duy nhất hai lần lên ngôi và có bốn người con đều làm vua."
     },
     {
       "id": "4ec98f88-af64-55cc-9f1d-72dde720196b",
@@ -183,14 +272,6 @@
       "bio": "Cầu thủ bóng đá người Việt-Pháp đang thi đấu ở vị trí hậu vệ trái cho câu lạc bộ Công an Hà Nội và đội tuyển quốc gia Việt Nam."
     },
     {
-      "id": "a50be6fb-5c35-54af-bc1f-507b430f3134",
-      "name": "Trần Văn Trà",
-      "fails": [
-        "L5:bio_range_birth(1918!=1919)"
-      ],
-      "bio": "Trần Văn Trà (1919-1996) là Thượng tướng Quân đội nhân dân Việt Nam, Thứ trưởng Bộ Quốc phòng, Tư lệnh Quân Giải phóng miền Nam trong Chiến tranh Việt Nam."
-    },
-    {
       "id": "3e82378c-2e83-5e00-8071-2af9ebdd8b93",
       "name": "Trung Dân",
       "fails": [
@@ -205,14 +286,6 @@
         "L3:name_missing"
       ],
       "bio": "Nam ca sĩ kiêm vũ công người Đức gốc Việt, quán quân Vietnam Idol mùa thứ sáu, từng được đề cử tại giải Cống hiến."
-    },
-    {
-      "id": "0088a7e9-3cbe-5ce3-b8a5-91517008025b",
-      "name": "Trần Hữu Dũng",
-      "fails": [
-        "L5:bio_range_birth(1946!=1945)"
-      ],
-      "bio": "Trần Hữu Dũng (1945–2023) là giáo sư kinh tế học gốc Việt tại Đại học Wright State, chuyên nghiên cứu kinh tế Đông Á và Việt Nam."
     },
     {
       "id": "f2802ec1-2a00-593b-92e7-c967fb5de57c",

@@ -6,6 +6,7 @@
 *.duckdb
 *.duckdb.wal
 *.duckdb.tmp
+wikipath.duckdb.bak.*
 
 # Python
 __pycache__/
